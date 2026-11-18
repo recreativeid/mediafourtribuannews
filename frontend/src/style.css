@@ -1,0 +1,97 @@
+@import "tailwindcss";
+
+@theme {
+  --color-mftn-navy: #0B2563;
+  --color-mftn-blue: #1648B8;
+  --color-mftn-red: #D91E28;
+  --color-mftn-red-dark: #B3151E;
+  --color-mftn-gold: #F5B700;
+  --color-mftn-canvas: #F5F7FB;
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-editorial: "Newsreader", Georgia, Cambria, serif;
+}
+
+@layer base {
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--color-mftn-canvas);
+    color: #0F172A;
+    overflow-x: hidden;
+  }
+}
+
+.font-editorial {
+  font-family: var(--font-editorial);
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Smooth breaking news marquee */
+@keyframes mftn-marquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  display: inline-flex;
+  width: max-content;
+  animation: mftn-marquee 34s linear infinite;
+}
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+/* Editorial article prose styling */
+.article-prose p {
+  margin-bottom: 1.15em;
+  line-height: 1.85;
+  color: #1E293B;
+}
+.article-prose p.lead {
+  font-size: 1.1em;
+  font-weight: 500;
+  color: #0F172A;
+}
+.article-prose h2, .article-prose h3 {
+  font-weight: 800;
+  color: #0B2563;
+  margin-top: 1.5em;
+  margin-bottom: 0.6em;
+  line-height: 1.3;
+}
+.article-prose blockquote {
+  border-left: 4px solid #D91E28;
+  background: #F8FAFC;
+  padding: 0.9rem 1.1rem;
+  border-radius: 0 0.75rem 0.75rem 0;
+  font-style: italic;
+  color: #334155;
+  margin: 1.25rem 0;
+}
+.article-prose ul, .article-prose ol {
+  padding-left: 1.4rem;
+  margin-bottom: 1.1rem;
+}
+.article-prose li {
+  margin-bottom: 0.4rem;
+}
+.article-prose img {
+  border-radius: 0.75rem;
+  margin: 1.25rem 0;
+  max-width: 100%;
+  height: auto;
+}
+
+.safe-pb {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+}
