@@ -118,8 +118,12 @@ export function clearBookmarks() {
 
 export const isAuthenticated = computed(() => Boolean(getToken() && portalState.user && !isSessionExpired()))
 
-export async function loginAdmin(email, password) {
-  const res = await api.post('/auth/login', { email, password })
+export async function loginAdmin(usernameOrEmail, password) {
+  const res = await api.post('/auth/login', {
+    username: usernameOrEmail,
+    email: usernameOrEmail,
+    password,
+  })
   const durationMs = res.expires_in ? Number(res.expires_in) * 1000 : SESSION_DURATION_MS
   setToken(res.token)
   setSessionExpiresAt(Date.now() + durationMs)

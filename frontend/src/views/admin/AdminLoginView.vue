@@ -2,12 +2,13 @@
 import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { loginAdmin, showToast } from '../../composables/usePortal'
-import { Lock, Mail, Eye, EyeOff, ArrowLeft, ShieldCheck, Clock } from 'lucide-vue-next'
+import { resolveImg } from '../../api/client'
+import { Lock, User, Eye, EyeOff, ArrowLeft, ShieldCheck, Clock } from 'lucide-vue-next'
 
 const router = useRouter()
 const route = useRoute()
 
-const email = ref('')
+const username = ref('')
 const password = ref('')
 const showPass = ref(false)
 const loading = ref(false)
@@ -17,18 +18,18 @@ const isExpiredNotice = computed(() => route.query.expired === '1')
 
 async function handleSubmit() {
   errorMsg.value = ''
-  if (!email.value.trim() || !password.value) {
-    errorMsg.value = 'Email dan kata sandi wajib diisi.'
+  if (!username.value.trim() || !password.value) {
+    errorMsg.value = 'Username/email dan kata sandi wajib diisi.'
     return
   }
   loading.value = true
   try {
-    await loginAdmin(email.value.trim(), password.value)
+    await loginAdmin(username.value.trim(), password.value)
     showToast('Selamat datang di Panel Redaksi!')
     const target = route.query.redirect ? String(route.query.redirect) : '/admin'
     router.push(target)
   } catch (e) {
-    errorMsg.value = e.message || 'Email atau kata sandi tidak sesuai'
+    errorMsg.value = e.message || 'Username atau kata sandi tidak sesuai'
   } finally {
     loading.value = false
   }
@@ -52,7 +53,7 @@ async function handleSubmit() {
         <!-- Brand Header -->
         <div class="bg-white px-6 pt-7 pb-5 text-center border-b-4 border-[#D91E28]">
           <img
-            src="/images/logo-mftn.jpg"
+            :src="resolveImg('images/logo-mftn.jpg')"
             alt="Media Four Tribuan News"
             class="h-20 w-auto mx-auto object-contain mb-3"
           />
@@ -77,17 +78,17 @@ async function handleSubmit() {
 
           <form @submit.prevent="handleSubmit" autocomplete="off" class="space-y-4">
             <div>
-              <label for="login-email" class="block text-xs font-extrabold text-slate-700 mb-1.5">Email Redaksi</label>
+              <label for="login-username" class="block text-xs font-extrabold text-slate-700 mb-1.5">Username / Email Redaksi</label>
               <div class="relative">
-                <Mail class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <User class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
-                  id="login-email"
-                  v-model="email"
-                  type="email"
+                  id="login-username"
+                  v-model="username"
+                  type="text"
                   required
                   autocomplete="off"
-                  placeholder="Masukkan email redaksi"
-                  class="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#0B2563] text-sm focus:outline-none"
+                  placeholder="Masukkan username (admin) atau email"
+                  class="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#0B2563] text-sm focus:outline-hidden"
                 />
               </div>
             </div>
@@ -103,13 +104,13 @@ async function handleSubmit() {
                   required
                   autocomplete="new-password"
                   placeholder="Masukkan kata sandi"
-                  class="w-full pl-10 pr-11 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#0B2563] text-sm focus:outline-none"
+                  class="w-full pl-10 pr-11 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#0B2563] text-sm focus:outline-hidden"
                 />
                 <button
                   type="button"
                   @click="showPass = !showPass"
                   aria-label="Tampilkan atau sembunyikan kata sandi"
-                  class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
+                  class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer"
                 >
                   <EyeOff v-if="showPass" class="w-4 h-4" />
                   <Eye v-else class="w-4 h-4" />
@@ -120,7 +121,7 @@ async function handleSubmit() {
             <button
               type="submit"
               :disabled="loading"
-              class="w-full py-3.5 rounded-xl bg-[#0B2563] hover:bg-[#D91E28] text-white font-extrabold text-sm shadow-md transition-colors disabled:opacity-50"
+              class="w-full py-3.5 rounded-xl bg-[#0B2563] hover:bg-[#D91E28] text-white font-extrabold text-sm shadow-md transition-colors disabled:opacity-50 cursor-pointer"
             >
               {{ loading ? 'Memverifikasi...' : 'Masuk ke Dashboard Admin' }}
             </button>

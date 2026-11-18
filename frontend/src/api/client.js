@@ -325,19 +325,30 @@ export const api = {
 
     // 1. Auth Login: /auth/login
     if (path === '/auth/login') {
-      const { email, password } = body || {}
-      if (!email || !password) {
-        throw new Error('Email dan kata sandi wajib diisi')
+      const ident = (body?.username || body?.email || '').trim().toLowerCase()
+      const password = body?.password || ''
+      if (!ident || !password) {
+        throw new Error('Username/email dan kata sandi wajib diisi')
       }
 
-      // Check against stored users
-      const cleanEmail = email.trim().toLowerCase()
-      const user = store.users.find((u) => u.email.toLowerCase() === cleanEmail)
+      // Check against stored users (supports username 'admin', email, or name)
+      const user = store.users.find((u) => {
+        const uEmail = (u.email || '').toLowerCase()
+        const uName = (u.name || '').toLowerCase()
+        return (
+          uEmail === ident ||
+          uName === ident ||
+          (ident === 'admin' && (u.role === 'Administrator' || uEmail.startsWith('admin'))) ||
+          (ident === 'editor' && (u.role === 'Editor' || uEmail.startsWith('redaksi'))) ||
+          (ident === 'reporter' && (u.role === 'Reporter' || uEmail.startsWith('reporter')))
+        )
+      })
+
       if (!user) {
         throw new Error('Kredensial tidak valid: Akun tidak ditemukan')
       }
 
-      // Simple password check (supports plain text update or default admin123)
+      // Password check (supports plain text update or default admin123)
       const isDefault = password === 'admin123'
       const isCustomMatch = user.plain_password && user.plain_password === password
       if (!isDefault && !isCustomMatch) {
