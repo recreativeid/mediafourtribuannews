@@ -6,7 +6,18 @@ Portal berita digital modern berorientasi **Mobile-First ("Mobile Verse")** leng
 
 ---
 
-## 🌐 Live Portal di GitHub Pages
+## 🌐 Live Portal Deployment
+
+### 1. Vercel (Rekomendasi — Instant CDN & Domain Utama)
+Deploy otomatis melalui GitHub ke Vercel dengan 1 klik:
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Frecreativeid%2Fmediafourtribuannews)
+
+- **1-Click Import Link**: [https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Frecreativeid%2Fmediafourtribuannews](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Frecreativeid%2Fmediafourtribuannews)
+- Berjalan otomatis di domain utama (misalnya `https://mediafourtribuannews.vercel.app`)
+- Setiap commit/push baru ke branch `main` di GitHub akan langsung dideploy otomatis oleh Vercel.
+
+### 2. GitHub Pages
 - **Portal Publik**: [https://recreativeid.github.io/mediafourtribuannews/](https://recreativeid.github.io/mediafourtribuannews/)
 - **Login Admin**: [https://recreativeid.github.io/mediafourtribuannews/admin/login](https://recreativeid.github.io/mediafourtribuannews/admin/login)
 
