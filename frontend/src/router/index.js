@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { getToken } from '../api/client'
+import { isSessionExpired } from '../api/client'
+import { logoutAdmin } from '../composables/usePortal'
 
 import PublicLayout from '../layouts/PublicLayout.vue'
 import AdminLayout from '../layouts/AdminLayout.vue'
@@ -19,6 +20,7 @@ import AdminCommentsView from '../views/admin/AdminCommentsView.vue'
 import AdminAdsView from '../views/admin/AdminAdsView.vue'
 import AdminEditorialView from '../views/admin/AdminEditorialView.vue'
 import AdminUsersView from '../views/admin/AdminUsersView.vue'
+import AdminAccountView from '../views/admin/AdminAccountView.vue'
 import AdminSettingsView from '../views/admin/AdminSettingsView.vue'
 
 const routes = [
@@ -52,6 +54,7 @@ const routes = [
       { path: 'iklan', name: 'admin-ads', component: AdminAdsView },
       { path: 'redaksi', name: 'admin-editorial', component: AdminEditorialView },
       { path: 'pengguna', name: 'admin-users', component: AdminUsersView },
+      { path: 'akun', name: 'admin-account', component: AdminAccountView },
       { path: 'pengaturan', name: 'admin-settings', component: AdminSettingsView },
     ],
   },
@@ -69,11 +72,15 @@ const router = createRouter({
 })
 
 router.beforeEach((to) => {
-  const token = getToken()
-  if (to.meta.requiresAuth && !token) {
-    return { name: 'admin-login', query: { redirect: to.fullPath } }
+  const expired = isSessionExpired()
+  if (to.meta.requiresAuth && expired) {
+    logoutAdmin()
+    return {
+      name: 'admin-login',
+      query: { redirect: to.fullPath, expired: '1' },
+    }
   }
-  if (to.meta.guestOnly && token) {
+  if (to.meta.guestOnly && !expired) {
     return { name: 'admin-dashboard' }
   }
   return true

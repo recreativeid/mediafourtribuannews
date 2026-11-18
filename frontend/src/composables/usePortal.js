@@ -1,5 +1,13 @@
 import { reactive, computed } from 'vue'
-import { api, getToken, setToken } from '../api/client'
+import {
+  api,
+  getToken,
+  setToken,
+  setSessionExpiresAt,
+  isSessionExpired,
+  clearAuthStorage,
+  SESSION_DURATION_MS,
+} from '../api/client'
 
 const savedBookmarks = (() => {
   try {
@@ -11,6 +19,10 @@ const savedBookmarks = (() => {
 
 const savedUser = (() => {
   try {
+    if (isSessionExpired()) {
+      clearAuthStorage()
+      return null
+    }
     return JSON.parse(localStorage.getItem('mftn_user') || 'null')
   } catch {
     return null
@@ -53,7 +65,7 @@ export function showToast(message, type = 'success') {
     if (portalState.toast && portalState.toast.message === message) {
       portalState.toast = null
     }
-  }, 3200)
+  }, 3400)
 }
 
 export async function bootstrapPortal(force = false) {
@@ -104,18 +116,33 @@ export function clearBookmarks() {
   localStorage.setItem('mftn_bookmarks', '[]')
 }
 
-export const isAuthenticated = computed(() => Boolean(getToken() && portalState.user))
+export const isAuthenticated = computed(() => Boolean(getToken() && portalState.user && !isSessionExpired()))
 
 export async function loginAdmin(email, password) {
   const res = await api.post('/auth/login', { email, password })
+  const durationMs = res.expires_in ? Number(res.expires_in) * 1000 : SESSION_DURATION_MS
   setToken(res.token)
+  setSessionExpiresAt(Date.now() + durationMs)
   portalState.user = res.user
   localStorage.setItem('mftn_user', JSON.stringify(res.user))
   return res.user
 }
 
+export async function updateAdminAccount(payload) {
+  const res = await api.put('/auth/account', payload)
+  if (res.token) {
+    const durationMs = res.expires_in ? Number(res.expires_in) * 1000 : SESSION_DURATION_MS
+    setToken(res.token)
+    setSessionExpiresAt(Date.now() + durationMs)
+  }
+  if (res.user) {
+    portalState.user = res.user
+    localStorage.setItem('mftn_user', JSON.stringify(res.user))
+  }
+  return res
+}
+
 export function logoutAdmin() {
-  setToken('')
+  clearAuthStorage()
   portalState.user = null
-  localStorage.removeItem('mftn_user')
 }

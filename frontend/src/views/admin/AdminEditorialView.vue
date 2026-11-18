@@ -33,23 +33,31 @@ function reset() {
 }
 
 async function save() {
-  const payload = { ...form.value, sort_order: Number(form.value.sort_order) }
-  if (editingId.value) {
-    await api.put(`/admin/redaksi/${editingId.value}`, payload)
-    showToast('Data redaksi diperbarui!')
-  } else {
-    await api.post('/admin/redaksi', payload)
-    showToast('Anggota redaksi ditambahkan!')
+  try {
+    const payload = { ...form.value, sort_order: Number(form.value.sort_order) }
+    if (editingId.value) {
+      await api.put(`/admin/redaksi/${editingId.value}`, payload)
+      showToast('Data redaksi diperbarui!')
+    } else {
+      await api.post('/admin/redaksi', payload)
+      showToast('Anggota redaksi ditambahkan!')
+    }
+    reset()
+    load()
+  } catch (err) {
+    showToast(err.message || 'Gagal menyimpan data redaksi', 'error')
   }
-  reset()
-  load()
 }
 
 async function remove(m) {
   if (!confirm(`Hapus ${m.name} dari susunan redaksi?`)) return
-  await api.del(`/admin/redaksi/${m.id}`)
-  showToast('Data dihapus', 'info')
-  load()
+  try {
+    await api.del(`/admin/redaksi/${m.id}`)
+    showToast('Data dihapus', 'info')
+    load()
+  } catch (err) {
+    showToast(err.message || 'Gagal menghapus data redaksi', 'error')
+  }
 }
 
 onMounted(load)

@@ -1,4 +1,5 @@
 const API_BASE = '/api'
+export const SESSION_DURATION_MS = 20 * 60 * 1000 // 20 menit
 
 export function getToken() {
   return localStorage.getItem('mftn_token') || ''
@@ -7,6 +8,30 @@ export function getToken() {
 export function setToken(token) {
   if (token) localStorage.setItem('mftn_token', token)
   else localStorage.removeItem('mftn_token')
+}
+
+export function getSessionExpiresAt() {
+  const raw = Number(localStorage.getItem('mftn_expires_at') || 0)
+  return Number.isFinite(raw) ? raw : 0
+}
+
+export function setSessionExpiresAt(expiresAtMs) {
+  if (expiresAtMs) localStorage.setItem('mftn_expires_at', String(expiresAtMs))
+  else localStorage.removeItem('mftn_expires_at')
+}
+
+export function isSessionExpired() {
+  const token = getToken()
+  if (!token) return true
+  const exp = getSessionExpiresAt()
+  if (!exp) return true
+  return Date.now() >= exp
+}
+
+export function clearAuthStorage() {
+  setToken('')
+  setSessionExpiresAt(0)
+  localStorage.removeItem('mftn_user')
 }
 
 export async function apiRequest(path, options = {}) {
@@ -28,9 +53,11 @@ export async function apiRequest(path, options = {}) {
 
   const data = await res.json().catch(() => ({}))
   if (!res.ok) {
-    if (res.status === 401 && path.startsWith('/admin')) {
-      setToken('')
-      localStorage.removeItem('mftn_user')
+    if (res.status === 401 && (path.startsWith('/admin') || path === '/auth/me')) {
+      clearAuthStorage()
+      if (window.location.pathname.startsWith('/admin') && window.location.pathname !== '/admin/login') {
+        window.location.href = '/admin/login?expired=1'
+      }
     }
     throw new Error(data.error || `Request gagal (${res.status})`)
   }

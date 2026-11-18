@@ -14,16 +14,24 @@ async function load() {
 }
 
 async function setStatus(cm, status) {
-  await api.put(`/admin/comments/${cm.id}/status`, { status })
-  showToast(`Status komentar diubah menjadi ${status}`)
-  load()
+  try {
+    await api.put(`/admin/comments/${cm.id}/status`, { status })
+    showToast(`Status komentar diubah menjadi ${status}`)
+    load()
+  } catch (err) {
+    showToast(err.message || 'Gagal memperbarui status komentar', 'error')
+  }
 }
 
 async function remove(cm) {
   if (!confirm('Hapus komentar ini?')) return
-  await api.del(`/admin/comments/${cm.id}`)
-  showToast('Komentar dihapus', 'info')
-  load()
+  try {
+    await api.del(`/admin/comments/${cm.id}`)
+    showToast('Komentar dihapus', 'info')
+    load()
+  } catch (err) {
+    showToast(err.message || 'Gagal menghapus komentar', 'error')
+  }
 }
 
 watch(statusFilter, load)

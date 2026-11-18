@@ -37,7 +37,7 @@ func GenerateToken(userID int64, name, email, role string) (string, error) {
 		Email:  email,
 		Role:   role,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(72 * time.Hour)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(20 * time.Minute)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			Issuer:    "media-four-tribuan-news",
 		},

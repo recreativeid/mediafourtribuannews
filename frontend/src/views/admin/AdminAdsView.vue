@@ -50,28 +50,40 @@ function reset() {
 async function uploadImg(e) {
   const f = e.target.files?.[0]
   if (!f) return
-  const res = await api.upload(f)
-  form.value.image = res.url
-  showToast('Banner berhasil diunggah')
+  try {
+    const res = await api.upload(f)
+    form.value.image = res.url
+    showToast('Banner berhasil diunggah')
+  } catch (err) {
+    showToast(err.message || 'Gagal mengunggah banner', 'error')
+  }
 }
 
 async function save() {
-  if (editingId.value) {
-    await api.put(`/admin/ads/${editingId.value}`, form.value)
-    showToast('Slot iklan diperbarui!')
-  } else {
-    await api.post('/admin/ads', form.value)
-    showToast('Slot iklan ditambahkan!')
+  try {
+    if (editingId.value) {
+      await api.put(`/admin/ads/${editingId.value}`, form.value)
+      showToast('Slot iklan diperbarui!')
+    } else {
+      await api.post('/admin/ads', form.value)
+      showToast('Slot iklan ditambahkan!')
+    }
+    reset()
+    load()
+  } catch (err) {
+    showToast(err.message || 'Gagal menyimpan iklan', 'error')
   }
-  reset()
-  load()
 }
 
 async function remove(a) {
   if (!confirm(`Hapus iklan "${a.title}"?`)) return
-  await api.del(`/admin/ads/${a.id}`)
-  showToast('Iklan dihapus', 'info')
-  load()
+  try {
+    await api.del(`/admin/ads/${a.id}`)
+    showToast('Iklan dihapus', 'info')
+    load()
+  } catch (err) {
+    showToast(err.message || 'Gagal menghapus iklan', 'error')
+  }
 }
 
 onMounted(load)

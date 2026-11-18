@@ -65,6 +65,7 @@ func main() {
 			r.Use(middleware.RequireAuth)
 
 			r.Get("/auth/me", api.Me)
+			r.Put("/auth/account", api.UpdateAccount)
 			r.Get("/admin/dashboard", api.GetDashboard)
 
 			r.Get("/admin/articles", api.ListArticles)

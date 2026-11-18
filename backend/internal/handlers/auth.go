@@ -63,8 +63,9 @@ func (a *API) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, map[string]any{
-		"token": token,
-		"user":  u.User,
+		"token":      token,
+		"expires_in": 1200, // 20 menit dalam detik
+		"user":       u.User,
 	})
 }
 
@@ -83,4 +84,94 @@ func (a *API) Me(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	writeError(w, http.StatusNotFound, "Pengguna tidak ditemukan")
+}
+
+type updateAccountRequest struct {
+	Name            string `json:"name"`
+	Email           string `json:"email"`
+	CurrentPassword string `json:"current_password"`
+	NewPassword     string `json:"new_password"`
+}
+
+func (a *API) UpdateAccount(w http.ResponseWriter, r *http.Request) {
+	claims := middleware.GetAuthUser(r)
+	if claims == nil {
+		writeError(w, http.StatusUnauthorized, "Tidak terautentikasi")
+		return
+	}
+
+	var req updateAccountRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "Format request tidak valid")
+		return
+	}
+
+	newEmail := strings.TrimSpace(strings.ToLower(req.Email))
+	newName := strings.TrimSpace(req.Name)
+	if newEmail == "" || !strings.Contains(newEmail, "@") {
+		writeError(w, http.StatusBadRequest, "Format email tidak valid")
+		return
+	}
+	if req.CurrentPassword == "" {
+		writeError(w, http.StatusBadRequest, "Kata sandi saat ini wajib diisi untuk verifikasi")
+		return
+	}
+	if req.NewPassword != "" && len(req.NewPassword) < 6 {
+		writeError(w, http.StatusBadRequest, "Kata sandi baru minimal 6 karakter")
+		return
+	}
+
+	a.Store.Mu.Lock()
+	defer a.Store.Mu.Unlock()
+
+	foundIdx := -1
+	for i, u := range a.Store.Data.Users {
+		if u.ID == claims.UserID {
+			foundIdx = i
+		} else if strings.ToLower(u.Email) == newEmail {
+			writeError(w, http.StatusBadRequest, "Email tersebut sudah digunakan oleh akun lain")
+			return
+		}
+	}
+	if foundIdx < 0 {
+		writeError(w, http.StatusNotFound, "Akun tidak ditemukan")
+		return
+	}
+
+	u := &a.Store.Data.Users[foundIdx]
+	if err := bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(req.CurrentPassword)); err != nil {
+		writeError(w, http.StatusUnauthorized, "Kata sandi saat ini tidak sesuai")
+		return
+	}
+
+	if newName != "" {
+		u.Name = newName
+	}
+	u.Email = newEmail
+	if req.NewPassword != "" {
+		hash, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "Gagal memproses kata sandi baru")
+			return
+		}
+		u.PasswordHash = string(hash)
+	}
+	u.UpdatedAt = time.Now()
+	if err := a.Store.SaveLocked(); err != nil {
+		writeError(w, http.StatusInternalServerError, "Gagal menyimpan perubahan akun")
+		return
+	}
+
+	token, err := middleware.GenerateToken(u.ID, u.Name, u.Email, u.Role)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Gagal memperbarui token sesi")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]any{
+		"message":    "Email dan/atau kata sandi berhasil diperbarui",
+		"token":      token,
+		"expires_in": 1200,
+		"user":       u.User,
+	})
 }

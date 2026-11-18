@@ -3,7 +3,6 @@ import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   portalState,
-  isAuthenticated,
   clearBookmarks,
   toggleBookmark,
 } from '../composables/usePortal'
@@ -15,7 +14,7 @@ import {
   Bookmark,
   Home,
   LayoutGrid,
-  ShieldCheck,
+  Info,
   Phone,
   Mail,
   MapPin,
@@ -92,18 +91,14 @@ function openQuickTag(tag) {
           </div>
 
           <div class="flex items-center gap-3 shrink-0">
-            <router-link to="/tentang" class="hidden sm:inline hover:text-[#F5B700] transition-colors">
+            <router-link to="/tentang" class="hover:text-[#F5B700] transition-colors">
               Tentang Kami
             </router-link>
-            <router-link to="/tentang#redaksi" class="hidden sm:inline hover:text-[#F5B700] transition-colors">
+            <router-link to="/tentang#redaksi" class="hover:text-[#F5B700] transition-colors">
               Redaksi
             </router-link>
-            <router-link
-              :to="isAuthenticated ? '/admin' : '/admin/login'"
-              class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white/10 hover:bg-[#D91E28] text-white font-bold transition-colors"
-            >
-              <ShieldCheck class="w-3 h-3 text-[#F5B700]" />
-              <span>{{ isAuthenticated ? 'Panel Admin' : 'Login Redaksi' }}</span>
+            <router-link to="/tentang#kontak" class="hidden sm:inline hover:text-[#F5B700] transition-colors">
+              Kontak
             </router-link>
           </div>
         </div>
@@ -356,11 +351,12 @@ function openQuickTag(tag) {
         </button>
 
         <router-link
-          :to="isAuthenticated ? '/admin' : '/admin/login'"
-          class="flex flex-col items-center justify-center gap-1 text-[10px] font-bold text-slate-500 hover:text-[#0B2563]"
+          to="/tentang"
+          class="flex flex-col items-center justify-center gap-1 text-[10px] font-bold transition-colors"
+          :class="route.name === 'about' ? 'text-[#D91E28]' : 'text-slate-500 hover:text-[#0B2563]'"
         >
-          <ShieldCheck class="w-5 h-5 text-[#0B2563]" />
-          <span>{{ isAuthenticated ? 'Admin' : 'Login' }}</span>
+          <Info class="w-5 h-5" />
+          <span>Redaksi</span>
         </router-link>
       </div>
     </nav>
@@ -428,14 +424,15 @@ function openQuickTag(tag) {
         </div>
 
         <div class="p-4 border-t border-slate-200 bg-slate-50 space-y-2">
-          <router-link
-            :to="isAuthenticated ? '/admin' : '/admin/login'"
-            @click="portalState.drawerOpen = false"
+          <a
+            :href="`https://wa.me/${portalState.settings.whatsapp_number}`"
+            target="_blank"
+            rel="noopener noreferrer"
             class="w-full py-2.5 rounded-xl bg-[#0B2563] hover:bg-[#D91E28] text-white text-xs font-extrabold flex items-center justify-center gap-2 transition-colors"
           >
-            <ShieldCheck class="w-4 h-4 text-[#F5B700]" />
-            <span>{{ isAuthenticated ? 'Buka Dashboard Admin' : 'Login Panel Redaksi' }}</span>
-          </router-link>
+            <Phone class="w-4 h-4 text-[#F5B700]" />
+            <span>Hotline Redaksi: {{ portalState.settings.hotline_phone }}</span>
+          </a>
         </div>
       </div>
     </div>
