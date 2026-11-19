@@ -2,6 +2,7 @@
 import { ref, onMounted, watch } from 'vue'
 import { api, resolveImg, formatNumber, timeAgoID } from '../../api/client'
 import { showToast } from '../../composables/usePortal'
+import RichEditor from '../../components/RichEditor.vue'
 import { Plus, Search, Pencil, Trash2, X, Upload, Star, ExternalLink } from 'lucide-vue-next'
 
 const articles = ref([])
@@ -253,9 +254,9 @@ onMounted(loadData)
     </div>
 
     <!-- CREATE / EDIT MODAL -->
-    <div v-if="modalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6">
-      <div class="fixed inset-0 bg-slate-950/70 backdrop-blur-xs" @click="modalOpen = false"></div>
-      <div class="relative bg-white rounded-3xl w-full max-w-3xl max-h-[92vh] flex flex-col overflow-hidden shadow-2xl z-10">
+    <div v-if="modalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-5">
+      <div class="fixed inset-0 bg-slate-950/75 backdrop-blur-xs" @click="modalOpen = false"></div>
+      <div class="relative bg-white rounded-3xl w-full max-w-4xl max-h-[94vh] flex flex-col overflow-hidden shadow-2xl z-10">
         <div class="px-6 py-4 bg-[#0B2563] text-white flex items-center justify-between">
           <h3 class="text-sm sm:text-base font-black">
             {{ editingId ? 'Sunting Berita' : 'Tulis Berita Baru' }}
@@ -350,13 +351,15 @@ onMounted(loadData)
           </div>
 
           <div>
-            <label class="block text-xs font-extrabold text-slate-700 mb-1">Isi Berita (Mendukung HTML &lt;p&gt;, &lt;h3&gt;, &lt;blockquote&gt;) *</label>
-            <textarea
-              v-model="form.content"
-              rows="8"
-              required
-              class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm font-mono focus:bg-white focus:border-[#0B2563] focus:outline-none"
-            ></textarea>
+            <div class="flex items-center justify-between mb-1.5">
+              <label class="block text-xs font-extrabold text-slate-700">
+                Isi Berita *
+              </label>
+              <span class="text-[11px] text-slate-400">
+                Visual editor: sisipkan foto/video di tengah tulisan, perataan teks, link/backlink
+              </span>
+            </div>
+            <RichEditor v-model="form.content" />
           </div>
 
           <div>

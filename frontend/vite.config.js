@@ -2,9 +2,8 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import tailwindcss from '@tailwindcss/vite'
 
-// On Vercel: base is '/' (root domain). On GitHub Pages: base is '/mediafourtribuannews/'
-const isVercel = Boolean(process.env.VERCEL || process.env.NOW_BUILDER)
-const basePath = process.env.VITE_BASE_PATH || (isVercel ? '/' : '/mediafourtribuannews/')
+// Production on cPanel / Custom Domain / Vercel uses root domain '/'
+const basePath = process.env.VITE_BASE_PATH || '/'
 
 export default defineConfig({
   base: basePath,
