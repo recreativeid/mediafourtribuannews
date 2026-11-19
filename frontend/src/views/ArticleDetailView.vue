@@ -33,10 +33,28 @@ const submittingComment = ref(false)
 
 const tagList = computed(() => {
   if (!article.value?.tags) return []
-  return article.value.tags
-    .split(',')
-    .map((t) => t.trim())
-    .filter(Boolean)
+  if (Array.isArray(article.value.tags)) {
+    return article.value.tags.map((t) => String(t).trim()).filter(Boolean)
+  }
+  if (typeof article.value.tags === 'string') {
+    return article.value.tags
+      .split(',')
+      .map((t) => t.trim())
+      .filter(Boolean)
+  }
+  return []
+})
+
+const formattedContent = computed(() => {
+  if (!article.value?.content) return ''
+  const raw = article.value.content
+  if (/<(p|div|br|h[1-6]|ul|ol|blockquote)\b/i.test(raw)) {
+    return raw
+  }
+  return raw
+    .split(/\n\s*\n/)
+    .map((p) => `<p>${p.trim().replace(/\n/g, '<br />')}</p>`)
+    .join('')
 })
 
 function onScroll() {
@@ -48,20 +66,22 @@ function onScroll() {
 async function fetchArticle() {
   loading.value = true
   try {
+    const slug = route.params.slug
     const [artRes, popRes, adRes] = await Promise.all([
-      api.get(`/articles/${route.params.slug}`),
+      api.get(`/articles/${slug}`),
       api.get('/articles?sort=popular&limit=5'),
       api.get('/ads'),
     ])
-    article.value = artRes.article
-    related.value = artRes.related || []
-    comments.value = artRes.comments || []
-    popular.value = popRes.data || []
-    ads.value = adRes.data || []
+    article.value = artRes?.article || artRes?.data || null
+    related.value = artRes?.related || []
+    comments.value = artRes?.comments || []
+    popular.value = popRes?.data || []
+    ads.value = adRes?.data || []
     if (article.value?.title) {
       document.title = `${article.value.title} — Media Four Tribuan News`
     }
   } catch (e) {
+    console.error('Fetch article error:', e)
     article.value = null
   } finally {
     loading.value = false
@@ -72,11 +92,11 @@ async function submitComment() {
   if (!article.value || !commentForm.value.name.trim() || !commentForm.value.comment.trim()) return
   submittingComment.value = true
   try {
-    const res = await api.post('/comments', {
+    const res = await api.post(`/articles/${route.params.slug}/comments`, {
       article_id: article.value.id,
       name: commentForm.value.name,
       email: commentForm.value.email,
-      comment: commentForm.value.comment,
+      content: commentForm.value.comment,
     })
     if (res.data) {
       comments.value.unshift(res.data)
@@ -277,7 +297,7 @@ onUnmounted(() => {
         <div
           class="article-prose max-w-none"
           :style="{ fontSize: `${fontSize}px` }"
-          v-html="article.content"
+          v-html="formattedContent"
         ></div>
 
         <!-- Tags -->

@@ -130,7 +130,14 @@ export const api = {
         if (supabase) {
           try {
             const { data, error } = await supabase.from('articles').select('*').eq('slug', slug).single()
-            if (!error && data) return { data }
+            if (!error && data) {
+              return {
+                data,
+                article: data,
+                related: [],
+                comments: [],
+              }
+            }
           } catch (e) {
             console.warn('[Supabase] Single article fallback:', e)
           }
@@ -138,7 +145,27 @@ export const api = {
         const store = getLocalStore()
         const found = store.articles.find((a) => a.slug === slug || String(a.id) === slug)
         if (!found) throw new Error('Berita tidak ditemukan')
-        return { data: found }
+
+        // Increment views count
+        found.views = (found.views || 0) + 1
+        saveLocalStore(store)
+
+        // Related articles in same category
+        const related = (store.articles || [])
+          .filter((a) => (a.category_id === found.category_id || a.category_slug === found.category_slug) && a.id !== found.id)
+          .slice(0, 4)
+
+        // Comments for this article
+        const comments = (store.comments || []).filter(
+          (c) => (c.article_slug === slug || c.article_id === found.id) && c.is_approved
+        )
+
+        return {
+          data: found,
+          article: found,
+          related,
+          comments,
+        }
       }
 
       // Comments for article: /articles/:slug/comments
@@ -404,6 +431,7 @@ export const api = {
     // 3. Admin Articles: /admin/articles
     if (path === '/admin/articles') {
       const nextId = (store.next_ids.articles = (store.next_ids.articles || 0) + 1)
+      const selectedCat = store.categories.find((c) => c.id === Number(body.category_id)) || {}
       const slug =
         body.slug ||
         (body.title || '')
@@ -419,9 +447,9 @@ export const api = {
         excerpt: body.excerpt || '',
         content: body.content || '',
         thumbnail: body.thumbnail || '/images/logo-mftn.jpg',
-        category_id: body.category_id || 1,
-        category_name: body.category_name || 'Nasional',
-        category_slug: body.category_slug || 'nasional',
+        category_id: body.category_id || selectedCat.id || 1,
+        category_name: body.category_name || selectedCat.name || 'Nasional',
+        category_slug: body.category_slug || selectedCat.slug || 'nasional',
         author_name: body.author_name || 'Redaksi MFTN',
         author_role: body.author_role || 'Redaksi',
         status: body.status || 'published',
@@ -431,7 +459,11 @@ export const api = {
         is_breaking: Boolean(body.is_breaking),
         views: 0,
         read_time: body.read_time || '3 mnt',
-        tags: body.tags || [],
+        tags: Array.isArray(body.tags)
+          ? body.tags
+          : typeof body.tags === 'string'
+          ? body.tags.split(',').map((t) => t.trim()).filter(Boolean)
+          : [],
         published_at: new Date().toISOString(),
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -446,7 +478,7 @@ export const api = {
           console.warn('[Supabase] Article insert failed:', e)
         }
       }
-      return { data: newArticle, message: 'Berita berhasil diterbitkan' }
+      return { data: newArticle, article: newArticle, message: 'Berita berhasil diterbitkan' }
     }
 
     // 4. Admin Categories: /admin/categories
@@ -657,7 +689,19 @@ export const api = {
       const id = Number(artMatch[1])
       const idx = store.articles.findIndex((a) => a.id === id)
       if (idx === -1) throw new Error('Berita tidak ditemukan')
-      store.articles[idx] = { ...store.articles[idx], ...body, updated_at: new Date().toISOString() }
+      const selectedCat = store.categories.find((c) => c.id === Number(body.category_id)) || {}
+      store.articles[idx] = {
+        ...store.articles[idx],
+        ...body,
+        category_name: body.category_name || selectedCat.name || store.articles[idx].category_name,
+        category_slug: body.category_slug || selectedCat.slug || store.articles[idx].category_slug,
+        tags: Array.isArray(body.tags)
+          ? body.tags
+          : typeof body.tags === 'string'
+          ? body.tags.split(',').map((t) => t.trim()).filter(Boolean)
+          : store.articles[idx].tags,
+        updated_at: new Date().toISOString(),
+      }
       saveLocalStore(store)
 
       if (supabase) {
@@ -665,7 +709,7 @@ export const api = {
           await supabase.from('articles').update(body).eq('id', id)
         } catch (e) {}
       }
-      return { data: store.articles[idx], message: 'Berita berhasil diperbarui' }
+      return { data: store.articles[idx], article: store.articles[idx], message: 'Berita berhasil diperbarui' }
     }
 
     // 4. Update Categories: /admin/categories/:id
