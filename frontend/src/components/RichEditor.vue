@@ -1,8 +1,6 @@
 <script setup>
 import { ref, watch, onMounted, nextTick } from 'vue'
-import { resolveImg } from '../api/client'
 import {
-  ImagePlus,
   Link2,
   Unlink,
   Bold,
@@ -22,8 +20,7 @@ import {
   X,
   Check,
   Eye,
-  Code,
-  Sparkles,
+  SlidersHorizontal,
 } from 'lucide-vue-next'
 
 const props = defineProps({
@@ -36,6 +33,7 @@ const emit = defineEmits(['update:modelValue'])
 const editorRef = ref(null)
 const mode = ref('visual') // 'visual' | 'code'
 const rawHtml = ref('')
+const showMoreTools = ref(true)
 
 // Modal state
 const mediaModalOpen = ref(false)
@@ -50,7 +48,7 @@ const linkOpenNewTab = ref(true)
 const uploadFile = ref(null)
 const uploadPreview = ref('')
 const uploadCaption = ref('')
-const uploadAlign = ref('center') // 'center' | 'left' | 'right'
+const uploadAlign = ref('center')
 const isCompressing = ref(false)
 
 const urlInput = ref('')
@@ -123,7 +121,7 @@ function onCodeInput(e) {
 // Formatting commands
 function execCmd(command, value = null) {
   if (mode.value !== 'visual') return
-  editorRef.value.focus()
+  editorRef.value?.focus()
   restoreSelection()
   document.execCommand(command, false, value)
   saveSelection()
@@ -148,7 +146,6 @@ function applyLink() {
   restoreSelection()
   const sel = window.getSelection()
   if (!sel || sel.isCollapsed) {
-    // If no text selected, insert the link as text
     const a = document.createElement('a')
     a.href = linkUrl.value
     a.textContent = linkUrl.value
@@ -159,7 +156,6 @@ function applyLink() {
     insertNodeAtCursor(a)
   } else {
     execCmd('createLink', linkUrl.value)
-    // Add target=_blank if requested
     if (linkOpenNewTab.value && editorRef.value) {
       const anchors = editorRef.value.querySelectorAll('a')
       anchors.forEach((a) => {
@@ -177,7 +173,7 @@ function removeLink() {
   execCmd('unlink')
 }
 
-// Helper: insert HTML / node at cursor
+// Insert HTML at cursor
 function insertHtmlAtCursor(html) {
   editorRef.value?.focus()
   restoreSelection()
@@ -224,7 +220,6 @@ function insertNodeAtCursor(node) {
   onEditorInput()
 }
 
-// Open Media Modal
 function openMediaModal() {
   saveSelection()
   uploadFile.value = null
@@ -240,7 +235,6 @@ function openMediaModal() {
 // Client-side image compressor (converts to optimized WebP/JPEG)
 async function compressImageFile(file, maxWidth = 1200, quality = 0.82) {
   return new Promise((resolve) => {
-    // If already SVG, return as is
     if (file.type === 'image/svg+xml') {
       const reader = new FileReader()
       reader.onload = () => resolve(reader.result)
@@ -266,7 +260,6 @@ async function compressImageFile(file, maxWidth = 1200, quality = 0.82) {
         const ctx = canvas.getContext('2d')
         ctx.drawImage(img, 0, 0, width, height)
 
-        // Try webp first, fallback to jpeg
         try {
           const webpData = canvas.toDataURL('image/webp', quality)
           if (webpData.startsWith('data:image/webp')) {
@@ -295,23 +288,15 @@ async function onFileSelected(e) {
   }
 }
 
-// Insert uploaded image
 function insertUploadedImage() {
   if (!uploadPreview.value) return
   mediaModalOpen.value = false
-
-  const alignClass =
-    uploadAlign.value === 'left'
-      ? 'float-left mr-5 mb-4 max-w-sm'
-      : uploadAlign.value === 'right'
-      ? 'float-right ml-5 mb-4 max-w-sm'
-      : 'my-5 text-center'
 
   const captionHtml = uploadCaption.value.trim()
     ? `<figcaption style="text-align: center; font-size: 11px; color: #64748b; font-style: italic; margin-top: 6px;">${uploadCaption.value.trim()}</figcaption>`
     : ''
 
-  const html = `<figure class="${alignClass}" style="display: block; margin-top: 1rem; margin-bottom: 1rem;">
+  const html = `<figure style="text-align: center; margin: 1.5rem 0;">
   <img src="${uploadPreview.value}" alt="${uploadCaption.value || 'Foto Berita'}" style="border-radius: 0.75rem; max-width: 100%; height: auto; display: inline-block; box-shadow: 0 1px 3px rgba(0,0,0,0.1);" />
   ${captionHtml}
 </figure><p><br></p>`
@@ -319,7 +304,6 @@ function insertUploadedImage() {
   insertHtmlAtCursor(html)
 }
 
-// Insert image from URL
 function insertUrlImage() {
   if (!urlInput.value.trim()) return
   mediaModalOpen.value = false
@@ -328,7 +312,7 @@ function insertUrlImage() {
     ? `<figcaption style="text-align: center; font-size: 11px; color: #64748b; font-style: italic; margin-top: 6px;">${urlCaption.value.trim()}</figcaption>`
     : ''
 
-  const html = `<figure style="text-align: center; margin: 1.25rem 0;">
+  const html = `<figure style="text-align: center; margin: 1.5rem 0;">
   <img src="${urlInput.value.trim()}" alt="${urlCaption.value || 'Foto Berita'}" style="border-radius: 0.75rem; max-width: 100%; height: auto; display: inline-block; box-shadow: 0 1px 3px rgba(0,0,0,0.1);" />
   ${captionHtml}
 </figure><p><br></p>`
@@ -336,13 +320,11 @@ function insertUrlImage() {
   insertHtmlAtCursor(html)
 }
 
-// Insert Video (YouTube or direct video)
 function insertVideo() {
   const url = videoUrl.value.trim()
   if (!url) return
   mediaModalOpen.value = false
 
-  // Parse YouTube video ID
   let youtubeId = ''
   const ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/)
   if (ytMatch) {
@@ -351,12 +333,11 @@ function insertVideo() {
 
   let embedHtml = ''
   if (youtubeId) {
-    embedHtml = `<div class="video-container" style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; border-radius: 0.75rem; margin: 1.25rem 0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+    embedHtml = `<div class="video-container" style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; border-radius: 0.75rem; margin: 1.5rem 0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
   <iframe src="https://www.youtube.com/embed/${youtubeId}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 0.75rem;"></iframe>
 </div>`
   } else {
-    // Generic video or link
-    embedHtml = `<div style="margin: 1.25rem 0; text-align: center;">
+    embedHtml = `<div style="margin: 1.5rem 0; text-align: center;">
   <a href="${url}" target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; gap: 6px; padding: 10px 16px; border-radius: 12px; background: #0B2563; color: #ffffff; font-weight: bold; font-size: 12px; text-decoration: none;">
     ▶ Tonton Video Terkait
   </a>
@@ -378,183 +359,234 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="border border-slate-300 rounded-2xl bg-white shadow-2xs overflow-hidden focus-within:border-[#0B2563] transition-colors">
-    <!-- TOP TOOLBAR: Add Media Button + Tabs (Visual / Code) -->
-    <div class="px-3 py-2 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
-      <!-- Add Media Button -->
+  <div class="wp-editor-wrap border border-slate-300 rounded-xl bg-slate-50 overflow-hidden shadow-xs">
+    <!-- TOP BAR: [Add Media] button on left + [Visual] [Code] tabs on right -->
+    <div class="wp-editor-top flex items-end justify-between px-3 pt-2.5 pb-0 bg-[#f0f0f1] border-b border-slate-300">
+      <!-- Add Media Button (Matches Gambar 2) -->
       <button
         type="button"
         @click="openMediaModal"
-        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-blue-50 border border-blue-200 text-[#0B2563] text-xs font-black shadow-2xs transition-colors"
+        class="inline-flex items-center gap-1.5 px-3 py-1.5 mb-1.5 rounded bg-white hover:bg-[#f6f7f7] border border-[#2271b1] text-[#2271b1] hover:text-[#135e96] text-xs font-bold shadow-2xs transition-colors"
       >
-        <ImagePlus class="w-4 h-4 text-[#D91E28]" />
-        <span>Add Media (Foto / Video / Link)</span>
+        <span class="text-sm">📷♫</span>
+        <span>Add Media</span>
       </button>
 
-      <!-- Tabs: Visual vs Code -->
-      <div class="inline-flex rounded-xl bg-slate-200/80 p-0.5 text-xs font-bold">
+      <!-- Visual vs Code Tabs (Matches Gambar 2) -->
+      <div class="flex items-end space-x-1">
         <button
           type="button"
           @click="switchMode('visual')"
-          class="px-3 py-1 rounded-lg transition-all"
-          :class="mode === 'visual' ? 'bg-white text-[#0B2563] shadow-xs' : 'text-slate-600 hover:text-slate-900'"
+          class="px-3.5 py-1.5 text-xs font-semibold rounded-t border-t border-l border-r transition-colors"
+          :class="mode === 'visual'
+            ? 'bg-white text-slate-800 border-slate-300 -mb-px pb-2 font-bold shadow-2xs'
+            : 'bg-[#dcdcde] text-slate-600 border-transparent hover:bg-[#eaeaea]'"
         >
           Visual
         </button>
         <button
           type="button"
           @click="switchMode('code')"
-          class="px-3 py-1 rounded-lg transition-all"
-          :class="mode === 'code' ? 'bg-white text-[#0B2563] shadow-xs' : 'text-slate-600 hover:text-slate-900'"
+          class="px-3.5 py-1.5 text-xs font-semibold rounded-t border-t border-l border-r transition-colors"
+          :class="mode === 'code'
+            ? 'bg-white text-slate-800 border-slate-300 -mb-px pb-2 font-bold shadow-2xs'
+            : 'bg-[#dcdcde] text-slate-600 border-transparent hover:bg-[#eaeaea]'"
         >
           Code
         </button>
       </div>
     </div>
 
-    <!-- FORMATTING TOOLBAR (Visual Mode) -->
+    <!-- WORDPRESS CLASSIC TOOLBAR (Visual Mode) -->
     <div
       v-show="mode === 'visual'"
-      class="px-2.5 py-2 bg-slate-100/70 border-b border-slate-200 flex flex-wrap items-center gap-1 text-slate-700"
+      class="wp-toolbar px-2 py-1.5 bg-white border-b border-slate-200 flex flex-wrap items-center gap-1 text-slate-700"
     >
-      <!-- Format Dropdown -->
+      <!-- Format Paragraph / Headings Dropdown -->
       <select
         @change="(e) => formatBlock(e.target.value)"
-        class="h-8 px-2 rounded-lg bg-white border border-slate-200 text-xs font-semibold focus:outline-none"
+        class="h-7 px-2 rounded border border-slate-300 bg-white text-xs font-medium focus:outline-none"
       >
         <option value="p">Paragraph</option>
-        <option value="h2">Heading 2 (Sub-judul Besar)</option>
-        <option value="h3">Heading 3 (Sub-judul Sedang)</option>
-        <option value="h4">Heading 4 (Sub-judul Kecil)</option>
-        <option value="blockquote">Kutipan / Blockquote</option>
+        <option value="h2">Heading 2</option>
+        <option value="h3">Heading 3</option>
+        <option value="h4">Heading 4</option>
+        <option value="blockquote">Blockquote</option>
       </select>
 
-      <span class="w-px h-5 bg-slate-300 mx-1"></span>
+      <span class="w-px h-5 bg-slate-300 mx-0.5"></span>
 
-      <!-- Bold, Italic, Underline -->
+      <!-- Bold (B) -->
       <button
         type="button"
         @click="execCmd('bold')"
-        class="w-8 h-8 rounded-lg hover:bg-white hover:shadow-2xs flex items-center justify-center transition-colors"
-        title="Tebal (Bold)"
+        class="w-7 h-7 rounded hover:bg-slate-100 flex items-center justify-center font-bold text-sm"
+        title="Bold (Ctrl+B)"
       >
-        <Bold class="w-4 h-4 font-black" />
+        <span class="font-black">B</span>
       </button>
+
+      <!-- Italic (I) -->
       <button
         type="button"
         @click="execCmd('italic')"
-        class="w-8 h-8 rounded-lg hover:bg-white hover:shadow-2xs flex items-center justify-center transition-colors"
-        title="Miring (Italic)"
+        class="w-7 h-7 rounded hover:bg-slate-100 flex items-center justify-center italic font-serif text-sm"
+        title="Italic (Ctrl+I)"
       >
-        <Italic class="w-4 h-4" />
-      </button>
-      <button
-        type="button"
-        @click="execCmd('underline')"
-        class="w-8 h-8 rounded-lg hover:bg-white hover:shadow-2xs flex items-center justify-center transition-colors"
-        title="Garis Bawah (Underline)"
-      >
-        <Underline class="w-4 h-4" />
+        <span class="italic font-bold">I</span>
       </button>
 
-      <span class="w-px h-5 bg-slate-300 mx-1"></span>
-
-      <!-- Lists -->
+      <!-- Bullet List -->
       <button
         type="button"
         @click="execCmd('insertUnorderedList')"
-        class="w-8 h-8 rounded-lg hover:bg-white hover:shadow-2xs flex items-center justify-center transition-colors"
-        title="Daftar Poin (Bullet List)"
+        class="w-7 h-7 rounded hover:bg-slate-100 flex items-center justify-center text-xs"
+        title="Bulleted List"
       >
-        <List class="w-4 h-4" />
+        <List class="w-3.5 h-3.5" />
       </button>
+
+      <!-- Numbered List -->
       <button
         type="button"
         @click="execCmd('insertOrderedList')"
-        class="w-8 h-8 rounded-lg hover:bg-white hover:shadow-2xs flex items-center justify-center transition-colors"
-        title="Daftar Nomor (Numbered List)"
+        class="w-7 h-7 rounded hover:bg-slate-100 flex items-center justify-center text-xs"
+        title="Numbered List"
       >
-        <ListOrdered class="w-4 h-4" />
+        <ListOrdered class="w-3.5 h-3.5" />
       </button>
+
+      <!-- Blockquote (“”) -->
       <button
         type="button"
         @click="execCmd('formatBlock', 'blockquote')"
-        class="w-8 h-8 rounded-lg hover:bg-white hover:shadow-2xs flex items-center justify-center transition-colors"
-        title="Kutipan Redaksi (Quote)"
+        class="w-7 h-7 rounded hover:bg-slate-100 flex items-center justify-center font-serif text-base font-bold leading-none"
+        title="Blockquote"
       >
-        <Quote class="w-4 h-4" />
+        &ldquo;&rdquo;
       </button>
 
-      <span class="w-px h-5 bg-slate-300 mx-1"></span>
+      <span class="w-px h-5 bg-slate-300 mx-0.5"></span>
 
-      <!-- Text Alignments: Kiri, Tengah, Kanan, Justify (Kiri-Kanan) -->
+      <!-- Align Left -->
       <button
         type="button"
         @click="execCmd('justifyLeft')"
-        class="w-8 h-8 rounded-lg hover:bg-white hover:shadow-2xs flex items-center justify-center transition-colors"
+        class="w-7 h-7 rounded hover:bg-slate-100 flex items-center justify-center"
         title="Rata Kiri"
       >
-        <AlignLeft class="w-4 h-4" />
+        <AlignLeft class="w-3.5 h-3.5" />
       </button>
+
+      <!-- Align Center -->
       <button
         type="button"
         @click="execCmd('justifyCenter')"
-        class="w-8 h-8 rounded-lg hover:bg-white hover:shadow-2xs flex items-center justify-center transition-colors"
+        class="w-7 h-7 rounded hover:bg-slate-100 flex items-center justify-center"
         title="Rata Tengah"
       >
-        <AlignCenter class="w-4 h-4" />
+        <AlignCenter class="w-3.5 h-3.5" />
       </button>
+
+      <!-- Align Right -->
       <button
         type="button"
         @click="execCmd('justifyRight')"
-        class="w-8 h-8 rounded-lg hover:bg-white hover:shadow-2xs flex items-center justify-center transition-colors"
+        class="w-7 h-7 rounded hover:bg-slate-100 flex items-center justify-center"
         title="Rata Kanan"
       >
-        <AlignRight class="w-4 h-4" />
+        <AlignRight class="w-3.5 h-3.5" />
       </button>
+
+      <!-- Align Justify (Rata Kanan Kiri) -->
       <button
         type="button"
         @click="execCmd('justifyFull')"
-        class="w-8 h-8 rounded-lg hover:bg-white hover:shadow-2xs flex items-center justify-center transition-colors"
-        title="Rata Kiri-Kanan (Justify)"
+        class="w-7 h-7 rounded hover:bg-slate-100 flex items-center justify-center"
+        title="Rata Kanan Kiri (Justify)"
       >
-        <AlignJustify class="w-4 h-4" />
+        <AlignJustify class="w-3.5 h-3.5" />
       </button>
 
-      <span class="w-px h-5 bg-slate-300 mx-1"></span>
+      <span class="w-px h-5 bg-slate-300 mx-0.5"></span>
 
-      <!-- Links (Backlink) -->
+      <!-- Insert Link (🔗) -->
       <button
         type="button"
         @click="openLinkModal"
-        class="w-8 h-8 rounded-lg hover:bg-white hover:shadow-2xs flex items-center justify-center transition-colors text-blue-700"
-        title="Sisipkan / Buat Tautan Link (Backlink)"
+        class="w-7 h-7 rounded hover:bg-slate-100 flex items-center justify-center text-[#2271b1]"
+        title="Sisipkan / Edit Link (Backlink)"
       >
-        <Link2 class="w-4 h-4" />
+        <Link2 class="w-3.5 h-3.5" />
       </button>
+
+      <!-- Remove Link -->
       <button
         type="button"
         @click="removeLink"
-        class="w-8 h-8 rounded-lg hover:bg-white hover:shadow-2xs flex items-center justify-center transition-colors text-slate-400 hover:text-red-600"
-        title="Hapus Tautan Link"
+        class="w-7 h-7 rounded hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-red-600"
+        title="Hapus Link"
       >
-        <Unlink class="w-4 h-4" />
+        <Unlink class="w-3.5 h-3.5" />
       </button>
 
-      <span class="w-px h-5 bg-slate-300 mx-1"></span>
-
-      <!-- Horizontal Rule -->
+      <!-- Horizontal Line (—) -->
       <button
         type="button"
         @click="execCmd('insertHorizontalRule')"
-        class="w-8 h-8 rounded-lg hover:bg-white hover:shadow-2xs flex items-center justify-center transition-colors"
-        title="Garis Pemisah (Horizontal Line)"
+        class="w-7 h-7 rounded hover:bg-slate-100 flex items-center justify-center font-bold"
+        title="Garis Pemisah (Horizontal Rule)"
       >
-        <Minus class="w-4 h-4" />
+        <Minus class="w-3.5 h-3.5" />
+      </button>
+
+      <!-- Toggle Kitchen Sink / More Tools -->
+      <button
+        type="button"
+        @click="showMoreTools = !showMoreTools"
+        class="w-7 h-7 rounded hover:bg-slate-100 flex items-center justify-center text-slate-500"
+        title="Alat Tambahan"
+      >
+        <SlidersHorizontal class="w-3.5 h-3.5" />
       </button>
     </div>
 
-    <!-- VISUAL EDITABLE AREA (WYSIWYG) -->
+    <!-- ROW 2 TOOLBAR (Optional Extra Tools) -->
+    <div
+      v-show="mode === 'visual' && showMoreTools"
+      class="wp-toolbar-row2 px-2 py-1 bg-[#fafafa] border-b border-slate-200 flex flex-wrap items-center gap-1 text-slate-600 text-xs"
+    >
+      <button
+        type="button"
+        @click="execCmd('underline')"
+        class="px-2 py-0.5 rounded hover:bg-slate-200 underline font-semibold text-xs"
+        title="Underline"
+      >
+        <u>U</u>
+      </button>
+      <button
+        type="button"
+        @click="execCmd('strikeThrough')"
+        class="px-2 py-0.5 rounded hover:bg-slate-200 line-through text-xs"
+        title="Coret (Strikethrough)"
+      >
+        <s>abc</s>
+      </button>
+      <span class="w-px h-4 bg-slate-300 mx-1"></span>
+      <button
+        type="button"
+        @click="execCmd('removeFormat')"
+        class="px-2 py-0.5 rounded hover:bg-slate-200 text-xs text-slate-500"
+        title="Hapus Format"
+      >
+        Clear Format
+      </button>
+      <span class="text-[11px] text-slate-400 ml-auto hidden sm:inline">
+        💡 Blok teks lalu klik 🔗 untuk membuat tautan
+      </span>
+    </div>
+
+    <!-- VISUAL EDITABLE AREA (What You See Is What You Get) -->
     <div
       v-show="mode === 'visual'"
       ref="editorRef"
@@ -563,7 +595,7 @@ onMounted(() => {
       @blur="saveSelection"
       @keyup="saveSelection"
       @mouseup="saveSelection"
-      class="p-4 sm:p-5 min-h-[300px] max-h-[500px] overflow-y-auto focus:outline-none article-prose text-sm sm:text-base leading-relaxed text-slate-900"
+      class="p-4 sm:p-5 min-h-[300px] max-h-[520px] overflow-y-auto bg-white focus:outline-none article-prose text-sm sm:text-base leading-relaxed text-slate-900"
       :data-placeholder="placeholder"
     ></div>
 
@@ -573,56 +605,56 @@ onMounted(() => {
       :value="rawHtml"
       @input="onCodeInput"
       rows="14"
-      class="w-full p-4 font-mono text-xs text-slate-800 bg-slate-900/5 focus:outline-none min-h-[300px]"
+      class="w-full p-4 font-mono text-xs text-slate-800 bg-[#f8f9fa] focus:outline-none min-h-[300px] border-none"
       placeholder="Kode HTML isi berita..."
     ></textarea>
 
-    <!-- FOOTER HINT -->
-    <div class="px-3 py-1.5 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
-      <span>Mode: {{ mode === 'visual' ? 'Visual (Ketik Langsung Tanpa Kode)' : 'Kode HTML' }}</span>
-      <span>Blok teks lalu klik tombol Link 🔗 untuk membuat backlink</span>
+    <!-- FOOTER STATUS BAR -->
+    <div class="px-3 py-1.5 bg-[#f0f0f1] border-t border-slate-300 flex items-center justify-between text-[11px] text-slate-500">
+      <span>Mode Editor: <strong>{{ mode === 'visual' ? 'Visual (Ketik Langsung Tanpa Kode)' : 'Kode HTML' }}</strong></span>
+      <span>Klik <strong>[Add Media]</strong> untuk menyisipkan gambar/video di tengah tulisan</span>
     </div>
 
     <!-- ========================================================================= -->
-    <!-- MODAL 1: ADD MEDIA (UPLOAD FOTO, TAUTAN GAMBAR PREVIEW, LINK VIDEO)      -->
+    <!-- MODAL 1: ADD MEDIA (UPLOAD FOTO AUTO-COMPRESS, LINK GAMBAR, LINK VIDEO)   -->
     <!-- ========================================================================= -->
     <div v-if="mediaModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
       <div class="fixed inset-0 bg-slate-950/70 backdrop-blur-xs" @click="mediaModalOpen = false"></div>
-      <div class="relative bg-white rounded-3xl w-full max-w-xl overflow-hidden shadow-2xl z-10 space-y-4">
+      <div class="relative bg-white rounded-2xl w-full max-w-xl overflow-hidden shadow-2xl z-10 space-y-4">
         <!-- Header Modal -->
-        <div class="px-5 py-4 bg-[#0B2563] text-white flex items-center justify-between">
-          <h3 class="text-sm sm:text-base font-black flex items-center gap-2">
-            <ImagePlus class="w-4 h-4 text-[#F5B700]" />
-            Sisipkan Media ke Isi Berita
+        <div class="px-5 py-3.5 bg-[#0B2563] text-white flex items-center justify-between">
+          <h3 class="text-sm sm:text-base font-bold flex items-center gap-2">
+            <span>📷♫</span>
+            <span>Add Media (Sisipkan Foto / Video / Tautan)</span>
           </h3>
-          <button type="button" @click="mediaModalOpen = false" class="p-1 rounded-lg hover:bg-white/10">
+          <button type="button" @click="mediaModalOpen = false" class="p-1 rounded hover:bg-white/10">
             <X class="w-4 h-4" />
           </button>
         </div>
 
         <!-- Navigation Tabs -->
         <div class="px-5 pt-1">
-          <div class="flex rounded-xl bg-slate-100 p-1 text-xs font-bold">
+          <div class="flex rounded-lg bg-slate-100 p-1 text-xs font-bold">
             <button
               type="button"
               @click="mediaTab = 'upload'"
-              class="flex-1 py-2 rounded-lg transition-all flex items-center justify-center gap-1.5"
+              class="flex-1 py-1.5 rounded transition-all flex items-center justify-center gap-1.5"
               :class="mediaTab === 'upload' ? 'bg-white text-[#0B2563] shadow-xs' : 'text-slate-600 hover:text-slate-900'"
             >
-              <Upload class="w-3.5 h-3.5" /> Upload Gambar
+              <Upload class="w-3.5 h-3.5" /> Upload Foto (Auto-Compress)
             </button>
             <button
               type="button"
               @click="mediaTab = 'url'"
-              class="flex-1 py-2 rounded-lg transition-all flex items-center justify-center gap-1.5"
+              class="flex-1 py-1.5 rounded transition-all flex items-center justify-center gap-1.5"
               :class="mediaTab === 'url' ? 'bg-white text-[#0B2563] shadow-xs' : 'text-slate-600 hover:text-slate-900'"
             >
-              <Globe class="w-3.5 h-3.5" /> Tautan Gambar (URL)
+              <Globe class="w-3.5 h-3.5" /> Link Foto (Preview)
             </button>
             <button
               type="button"
               @click="mediaTab = 'video'"
-              class="flex-1 py-2 rounded-lg transition-all flex items-center justify-center gap-1.5"
+              class="flex-1 py-1.5 rounded transition-all flex items-center justify-center gap-1.5"
               :class="mediaTab === 'video' ? 'bg-white text-[#0B2563] shadow-xs' : 'text-slate-600 hover:text-slate-900'"
             >
               <Video class="w-3.5 h-3.5" /> Link Video
@@ -631,42 +663,42 @@ onMounted(() => {
         </div>
 
         <div class="px-5 pb-5">
-          <!-- TAB 1: UPLOAD GAMBAR (KOMPRES AUTO) -->
+          <!-- TAB 1: UPLOAD GAMBAR DENGAN AUTO KOMPRESI -->
           <div v-if="mediaTab === 'upload'" class="space-y-3">
-            <div class="border-2 border-dashed border-slate-200 rounded-2xl p-4 text-center hover:border-[#0B2563] transition-colors">
+            <div class="border-2 border-dashed border-slate-300 rounded-xl p-4 text-center hover:border-[#2271b1] transition-colors">
               <input
                 type="file"
                 accept="image/*"
-                id="rich-editor-file"
+                id="wp-rich-file"
                 class="hidden"
                 @change="onFileSelected"
               />
-              <label for="rich-editor-file" class="cursor-pointer space-y-1 block">
-                <Upload class="w-8 h-8 text-[#0B2563] mx-auto" />
+              <label for="wp-rich-file" class="cursor-pointer space-y-1 block">
+                <Upload class="w-7 h-7 text-[#2271b1] mx-auto" />
                 <div class="text-xs font-bold text-slate-800">
-                  {{ isCompressing ? 'Mengompresi gambar...' : 'Klik untuk memilih gambar dari perangkat' }}
+                  {{ isCompressing ? 'Mengompresi gambar...' : 'Klik untuk memilih foto dari komputer/HP' }}
                 </div>
-                <div class="text-[10px] text-slate-400">Otomatis dioptimasi & dikompresi agar web tetap cepat</div>
+                <div class="text-[10px] text-slate-500">Otomatis dikompresi agar loading web tetap sangat cepat</div>
               </label>
             </div>
 
             <!-- Preview Gambar yang Dipilih -->
-            <div v-if="uploadPreview" class="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center gap-3">
-              <img :src="uploadPreview" alt="Preview" class="w-20 h-16 rounded-lg object-cover shrink-0 border" />
+            <div v-if="uploadPreview" class="p-3 rounded-lg bg-slate-50 border border-slate-200 flex items-center gap-3">
+              <img :src="uploadPreview" alt="Preview" class="w-20 h-16 rounded object-cover shrink-0 border" />
               <div class="flex-1 min-w-0">
                 <span class="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
-                  <Check class="w-3 h-3" /> Gambar siap disisipkan
+                  <Check class="w-3 h-3" /> Foto siap disisipkan ke posisi kursor
                 </span>
-                <p class="text-[11px] text-slate-500 mt-1 truncate">Disisipkan tepat di posisi kursor tulisan</p>
+                <p class="text-[11px] text-slate-500 mt-1 truncate">Foto akan muncul di dalam teks berita</p>
               </div>
             </div>
 
             <div>
-              <label class="block text-xs font-bold text-slate-700 mb-1">Keterangan / Caption Gambar (Opsional)</label>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Keterangan / Caption Foto (Opsional)</label>
               <input
                 v-model="uploadCaption"
-                placeholder="Contoh: Suasana saat rapat koordinasi berlangsung..."
-                class="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs"
+                placeholder="Contoh: Suasana saat konferensi pers berlangsung..."
+                class="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-xs"
               />
             </div>
 
@@ -674,7 +706,7 @@ onMounted(() => {
               <button
                 type="button"
                 @click="mediaModalOpen = false"
-                class="px-4 py-2 rounded-xl bg-slate-100 text-xs font-bold"
+                class="px-4 py-2 rounded-lg bg-slate-100 text-xs font-bold"
               >
                 Batal
               </button>
@@ -682,28 +714,28 @@ onMounted(() => {
                 type="button"
                 :disabled="!uploadPreview || isCompressing"
                 @click="insertUploadedImage"
-                class="px-5 py-2 rounded-xl bg-[#0B2563] hover:bg-[#D91E28] text-white text-xs font-extrabold disabled:opacity-50 transition-colors shadow-2xs"
+                class="px-5 py-2 rounded-lg bg-[#0B2563] hover:bg-[#D91E28] text-white text-xs font-bold disabled:opacity-50 transition-colors shadow-2xs"
               >
                 Sisipkan ke Tulisan
               </button>
             </div>
           </div>
 
-          <!-- TAB 2: TAUTAN GAMBAR DENGAN PREVIEW -->
+          <!-- TAB 2: LINK GAMBAR DENGAN LIVE PREVIEW -->
           <div v-else-if="mediaTab === 'url'" class="space-y-3">
             <div>
               <label class="block text-xs font-bold text-slate-700 mb-1">URL / Link Gambar *</label>
               <input
                 v-model="urlInput"
-                placeholder="https://example.com/foto-berita.jpg"
-                class="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs"
+                placeholder="https://example.com/foto.jpg"
+                class="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-xs"
               />
             </div>
 
             <!-- LIVE PREVIEW GAMBAR DARI LINK -->
-            <div v-if="urlInput.trim()" class="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+            <div v-if="urlInput.trim()" class="p-3 rounded-lg bg-slate-50 border border-slate-200 space-y-1">
               <span class="text-[10px] font-bold text-slate-500 uppercase">Live Preview Gambar Sumber:</span>
-              <div class="h-32 rounded-lg overflow-hidden bg-slate-200/60 flex items-center justify-center">
+              <div class="h-32 rounded overflow-hidden bg-slate-200/60 flex items-center justify-center">
                 <img
                   :src="urlInput.trim()"
                   alt="Preview Link"
@@ -714,11 +746,11 @@ onMounted(() => {
             </div>
 
             <div>
-              <label class="block text-xs font-bold text-slate-700 mb-1">Keterangan / Caption (Opsional)</label>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Keterangan / Caption Foto (Opsional)</label>
               <input
                 v-model="urlCaption"
-                placeholder="Kredit foto / sumber gambar..."
-                class="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs"
+                placeholder="Kredit foto / sumber..."
+                class="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-xs"
               />
             </div>
 
@@ -726,7 +758,7 @@ onMounted(() => {
               <button
                 type="button"
                 @click="mediaModalOpen = false"
-                class="px-4 py-2 rounded-xl bg-slate-100 text-xs font-bold"
+                class="px-4 py-2 rounded-lg bg-slate-100 text-xs font-bold"
               >
                 Batal
               </button>
@@ -734,7 +766,7 @@ onMounted(() => {
                 type="button"
                 :disabled="!urlInput.trim()"
                 @click="insertUrlImage"
-                class="px-5 py-2 rounded-xl bg-[#0B2563] hover:bg-[#D91E28] text-white text-xs font-extrabold disabled:opacity-50 transition-colors shadow-2xs"
+                class="px-5 py-2 rounded-lg bg-[#0B2563] hover:bg-[#D91E28] text-white text-xs font-bold disabled:opacity-50 transition-colors shadow-2xs"
               >
                 Sisipkan Gambar
               </button>
@@ -748,17 +780,17 @@ onMounted(() => {
               <input
                 v-model="videoUrl"
                 placeholder="https://www.youtube.com/watch?v=... atau https://youtu.be/..."
-                class="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs"
+                class="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-xs"
               />
-              <p class="text-[10px] text-slate-400 mt-1">Otomatis diubah menjadi pemutar video responsif di dalam tulisan.</p>
+              <p class="text-[10px] text-slate-500 mt-1">Otomatis disisipkan menjadi pemutar video di posisi kursor tulisan.</p>
             </div>
 
             <div>
               <label class="block text-xs font-bold text-slate-700 mb-1">Keterangan Video (Opsional)</label>
               <input
                 v-model="videoCaption"
-                placeholder="Contoh: Liputan eksklusif konferensi pers..."
-                class="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs"
+                placeholder="Contoh: Liputan eksklusif siaran langsung..."
+                class="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-xs"
               />
             </div>
 
@@ -766,7 +798,7 @@ onMounted(() => {
               <button
                 type="button"
                 @click="mediaModalOpen = false"
-                class="px-4 py-2 rounded-xl bg-slate-100 text-xs font-bold"
+                class="px-4 py-2 rounded-lg bg-slate-100 text-xs font-bold"
               >
                 Batal
               </button>
@@ -774,7 +806,7 @@ onMounted(() => {
                 type="button"
                 :disabled="!videoUrl.trim()"
                 @click="insertVideo"
-                class="px-5 py-2 rounded-xl bg-[#0B2563] hover:bg-[#D91E28] text-white text-xs font-extrabold disabled:opacity-50 transition-colors shadow-2xs"
+                class="px-5 py-2 rounded-lg bg-[#0B2563] hover:bg-[#D91E28] text-white text-xs font-bold disabled:opacity-50 transition-colors shadow-2xs"
               >
                 Sisipkan Video
               </button>
@@ -785,33 +817,33 @@ onMounted(() => {
     </div>
 
     <!-- ========================================================================= -->
-    <!-- MODAL 2: INSERT / EDIT LINK (BACKLINK MODAL)                              -->
+    <!-- MODAL 2: PASANG TAUTAN / BACKLINK (🔗)                                    -->
     <!-- ========================================================================= -->
     <div v-if="linkModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
       <div class="fixed inset-0 bg-slate-950/70 backdrop-blur-xs" @click="linkModalOpen = false"></div>
-      <div class="relative bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl z-10 p-5 space-y-4">
-        <div class="flex items-center justify-between pb-2 border-b border-slate-100">
-          <h3 class="text-sm font-black text-[#0B2563] flex items-center gap-2">
-            <Link2 class="w-4 h-4 text-[#D91E28]" />
-            Pasang Tautan / Backlink
+      <div class="relative bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl z-10 p-5 space-y-4">
+        <div class="flex items-center justify-between pb-2 border-b border-slate-200">
+          <h3 class="text-sm font-bold text-[#0B2563] flex items-center gap-2">
+            <Link2 class="w-4 h-4 text-[#2271b1]" />
+            Pasang Tautan (Backlink)
           </h3>
-          <button type="button" @click="linkModalOpen = false" class="p-1 rounded-lg hover:bg-slate-100">
+          <button type="button" @click="linkModalOpen = false" class="p-1 rounded hover:bg-slate-100">
             <X class="w-4 h-4" />
           </button>
         </div>
 
         <div class="space-y-3">
           <div>
-            <label class="block text-xs font-bold text-slate-700 mb-1">Tautan Tujuan (URL) *</label>
+            <label class="block text-xs font-bold text-slate-700 mb-1">URL Tujuan *</label>
             <input
               v-model="linkUrl"
               placeholder="https://example.com/artikel-terkait"
-              class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-mono focus:bg-white focus:border-[#0B2563]"
+              class="w-full px-3.5 py-2 rounded-lg bg-slate-50 border border-slate-200 text-xs font-mono focus:bg-white focus:border-[#2271b1]"
             />
           </div>
 
           <label class="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer pt-1">
-            <input v-model="linkOpenNewTab" type="checkbox" class="w-4 h-4 accent-[#D91E28] rounded" />
+            <input v-model="linkOpenNewTab" type="checkbox" class="w-4 h-4 accent-[#2271b1] rounded" />
             <span>Buka tautan di tab baru (target="_blank")</span>
           </label>
         </div>
@@ -820,14 +852,14 @@ onMounted(() => {
           <button
             type="button"
             @click="linkModalOpen = false"
-            class="px-4 py-2 rounded-xl bg-slate-100 text-xs font-bold"
+            class="px-4 py-2 rounded-lg bg-slate-100 text-xs font-bold"
           >
             Batal
           </button>
           <button
             type="button"
             @click="applyLink"
-            class="px-5 py-2 rounded-xl bg-[#0B2563] hover:bg-[#D91E28] text-white text-xs font-extrabold transition-colors shadow-2xs"
+            class="px-5 py-2 rounded-lg bg-[#2271b1] hover:bg-[#135e96] text-white text-xs font-bold transition-colors shadow-2xs"
           >
             Pasang Tautan
           </button>

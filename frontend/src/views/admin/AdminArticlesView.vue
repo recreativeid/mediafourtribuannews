@@ -352,11 +352,11 @@ onMounted(loadData)
 
           <div>
             <div class="flex items-center justify-between mb-1.5">
-              <label class="block text-xs font-extrabold text-slate-700">
-                Isi Berita *
+              <label class="block text-xs font-black text-[#0B2563] flex items-center gap-1.5">
+                <span>Isi Berita (Visual Editor & Add Media) *</span>
               </label>
-              <span class="text-[11px] text-slate-400">
-                Visual editor: sisipkan foto/video di tengah tulisan, perataan teks, link/backlink
+              <span class="text-[11px] text-slate-500 font-medium hidden sm:inline">
+                Gunakan tombol [Add Media] untuk foto/video di tengah tulisan
               </span>
             </div>
             <RichEditor v-model="form.content" />
