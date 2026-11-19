@@ -541,6 +541,9 @@ onUnmounted(() => {
           />
         </div>
       </section>
+
+      <!-- ==================== 8. AD SLOT: HOME BOTTOM ==================== -->
+      <AdBanner :ads="ads" position="home_bottom" class="mt-4" />
     </template>
   </div>
 </template>

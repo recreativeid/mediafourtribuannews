@@ -94,8 +94,13 @@ async function submitComment() {
   try {
     const res = await api.post(`/articles/${route.params.slug}/comments`, {
       article_id: article.value.id,
+      article_title: article.value.title,
+      article_slug: article.value.slug,
+      article_category: article.value.category_name,
+      article_thumbnail: article.value.thumbnail,
       name: commentForm.value.name,
       email: commentForm.value.email,
+      comment: commentForm.value.comment,
       content: commentForm.value.comment,
     })
     if (res.data) {
@@ -279,6 +284,9 @@ onUnmounted(() => {
           </div>
         </div>
 
+        <!-- Ad Slot: Article Top -->
+        <AdBanner :ads="ads" position="article_top" class="mb-5" />
+
         <!-- Featured Photo -->
         <figure class="mb-6">
           <div class="rounded-2xl overflow-hidden bg-slate-100 aspect-[16/10]">
@@ -312,6 +320,9 @@ onUnmounted(() => {
             #{{ tag }}
           </router-link>
         </div>
+
+        <!-- Ad Slot: Article Bottom -->
+        <AdBanner :ads="ads" position="article_bottom" class="my-6" />
 
         <!-- ==================== READER COMMENTS ==================== -->
         <section class="mt-8 pt-7 border-t-2 border-slate-100 space-y-5">

@@ -12,6 +12,22 @@ function loadLocalStore() {
     if (raw) {
       const parsed = JSON.parse(raw)
       if (parsed.articles && parsed.categories) {
+        // Auto-enrich legacy comments with article metadata if missing
+        if (parsed.comments?.length && parsed.articles?.length) {
+          parsed.comments.forEach((cm) => {
+            if (!cm.article_title || !cm.article_slug) {
+              const art = parsed.articles.find(
+                (a) => String(a.id) === String(cm.article_id) || a.slug === cm.article_slug
+              )
+              if (art) {
+                cm.article_title = cm.article_title || art.title
+                cm.article_slug = cm.article_slug || art.slug
+                cm.article_category = cm.article_category || art.category_name
+                cm.article_thumbnail = cm.article_thumbnail || art.thumbnail
+              }
+            }
+          })
+        }
         return parsed
       }
     }
@@ -297,16 +313,39 @@ export const api = {
 
     // 7. /admin/comments
     if (path.startsWith('/admin/comments')) {
+      const store = getLocalStore()
+      let commentsList = []
       if (supabase) {
         try {
           const { data, error } = await supabase.from('comments').select('*').order('created_at', { ascending: false })
-          if (!error && data?.length) return { data }
+          if (!error && data?.length) commentsList = data
         } catch (e) {
           console.warn('[Supabase] Admin comments fallback:', e)
         }
       }
-      const store = getLocalStore()
-      return { data: store.comments }
+      if (!commentsList.length) {
+        commentsList = store.comments || []
+      }
+
+      // Enrich comments with article data
+      const enriched = commentsList.map((cm) => {
+        let art = null
+        if (cm.article_slug) {
+          art = store.articles.find((a) => a.slug === cm.article_slug)
+        }
+        if (!art && cm.article_id) {
+          art = store.articles.find((a) => String(a.id) === String(cm.article_id))
+        }
+        return {
+          ...cm,
+          article_title: cm.article_title || art?.title || (cm.article_id ? `Artikel #${cm.article_id}` : 'Artikel Redaksi'),
+          article_slug: cm.article_slug || art?.slug || '',
+          article_thumbnail: cm.article_thumbnail || art?.thumbnail || '',
+          article_category: cm.article_category || art?.category_name || '',
+          comment: cm.comment || cm.content || '',
+        }
+      })
+      return { data: enriched }
     }
 
     // 8. /admin/users
@@ -405,13 +444,19 @@ export const api = {
       const slug = decodeURIComponent(commentsMatch[1])
       const article = store.articles.find((a) => a.slug === slug)
       const nextId = (store.next_ids.comments = (store.next_ids.comments || 0) + 1)
+      const commentText = body.comment || body.content || ''
       const newComment = {
         id: nextId,
-        article_id: article ? article.id : 1,
+        article_id: article ? article.id : (body.article_id || 1),
         article_slug: slug,
+        article_title: article ? article.title : (body.article_title || 'Artikel Terkait'),
+        article_category: article ? article.category_name : '',
+        article_thumbnail: article ? article.thumbnail : '',
         name: body.name || 'Pembaca',
         email: body.email || '',
-        content: body.content || '',
+        comment: commentText,
+        content: commentText,
+        status: 'approved',
         is_approved: true,
         created_at: new Date().toISOString(),
       }
@@ -777,20 +822,29 @@ export const api = {
       return { data: store.editorial_team[idx], message: 'Anggota redaksi diperbarui' }
     }
 
-    // 8. Update Comments (Approve/Reject): /admin/comments/:id
-    const comMatch = path.match(/^\/admin\/comments\/(\d+)$/)
+    // 8. Update Comments (Approve/Reject): /admin/comments/:id or /admin/comments/:id/status
+    const comMatch = path.match(/^\/admin\/comments\/(\d+)(?:\/status)?$/)
     if (comMatch) {
       const id = Number(comMatch[1])
       const idx = store.comments.findIndex((c) => c.id === id)
       if (idx === -1) throw new Error('Komentar tidak ditemukan')
-      store.comments[idx] = { ...store.comments[idx], ...body }
+      const newStatus = body.status || store.comments[idx].status || 'approved'
+      store.comments[idx] = {
+        ...store.comments[idx],
+        ...body,
+        status: newStatus,
+        is_approved: newStatus === 'approved',
+      }
       saveLocalStore(store)
       if (supabase) {
         try {
-          await supabase.from('comments').update(body).eq('id', id)
+          await supabase
+            .from('comments')
+            .update({ status: newStatus, is_approved: newStatus === 'approved' })
+            .eq('id', id)
         } catch (e) {}
       }
-      return { data: store.comments[idx], message: 'Komentar diperbarui' }
+      return { data: store.comments[idx], message: 'Status komentar diperbarui' }
     }
 
     return { data: null }

@@ -7,6 +7,7 @@ import {
   toggleBookmark,
 } from '../composables/usePortal'
 import { resolveImg, timeAgoID } from '../api/client'
+import AdBanner from '../components/AdBanner.vue'
 import {
   Search,
   Menu,
@@ -211,10 +212,22 @@ function openQuickTag(tag) {
       </div>
     </header>
 
+    <!-- Floating Desktop Skyscraper Ads (Sisi Kiri & Kanan) -->
+    <AdBanner :ads="portalState.ads" position="sidebar_left" />
+    <AdBanner :ads="portalState.ads" position="sidebar_right" />
+
+    <!-- Top Header Leaderboard Ad (Sisi Atas Portal) -->
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-3 sm:pt-4 w-full">
+      <AdBanner :ads="portalState.ads" position="top_header" />
+    </div>
+
     <!-- ==================== PAGE CONTENT ==================== -->
     <main class="flex-1 w-full">
       <router-view />
     </main>
+
+    <!-- Sticky Bottom Floating Banner (Sisi Bawah Melayang) -->
+    <AdBanner :ads="portalState.ads" position="sticky_bottom" />
 
     <!-- ==================== FOOTER ==================== -->
     <footer class="bg-[#081A47] text-slate-300 mt-12 border-t-4 border-[#D91E28]">

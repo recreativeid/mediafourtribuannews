@@ -46,6 +46,7 @@ export const portalState = reactive({
     youtube_url: 'https://youtube.com',
   },
   categories: [],
+  ads: [],
   bookmarks: savedBookmarks,
   user: savedUser,
   bootstrapped: false,
@@ -71,9 +72,10 @@ export function showToast(message, type = 'success') {
 export async function bootstrapPortal(force = false) {
   if (portalState.bootstrapped && !force) return
   try {
-    const [setRes, catRes] = await Promise.all([
+    const [setRes, catRes, adRes] = await Promise.all([
       api.get('/settings').catch(() => null),
       api.get('/categories').catch(() => null),
+      api.get('/ads').catch(() => null),
     ])
     if (setRes?.data) {
       Object.assign(portalState.settings, setRes.data)
@@ -81,9 +83,23 @@ export async function bootstrapPortal(force = false) {
     if (catRes?.data) {
       portalState.categories = catRes.data
     }
+    if (adRes?.data) {
+      portalState.ads = adRes.data
+    }
     portalState.bootstrapped = true
   } catch (e) {
     console.error('Bootstrap error:', e)
+  }
+}
+
+export async function refreshAds() {
+  try {
+    const res = await api.get('/ads')
+    if (res?.data) {
+      portalState.ads = res.data
+    }
+  } catch (e) {
+    console.warn('Refresh ads error:', e)
   }
 }
 

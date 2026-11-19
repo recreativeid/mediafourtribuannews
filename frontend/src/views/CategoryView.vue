@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router'
 import { api } from '../api/client'
 import { portalState } from '../composables/usePortal'
 import NewsCard from '../components/NewsCard.vue'
+import AdBanner from '../components/AdBanner.vue'
 import { ChevronLeft, ChevronRight, Flame, Clock } from 'lucide-vue-next'
 
 const route = useRoute()
@@ -148,5 +149,8 @@ onMounted(fetchArticles)
         Selanjutnya <ChevronRight class="w-4 h-4" />
       </button>
     </div>
+
+    <!-- Ad Slot -->
+    <AdBanner :ads="portalState.ads" position="home_bottom" class="mt-6" />
   </div>
 </template>
