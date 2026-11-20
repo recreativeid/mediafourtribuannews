@@ -1,0 +1,31 @@
+# ==============================================================================
+# MEDIA FOUR TRIBUAN NEWS — PRODUCTION ROBOTS.TXT
+# https://mediafourtribuannews.my.id
+# ==============================================================================
+
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /admin/*
+Disallow: /api/
+
+# Specialized Googlebot Crawlers
+User-agent: Googlebot
+Allow: /
+Disallow: /admin/
+
+User-agent: Googlebot-News
+Allow: /
+
+User-agent: Googlebot-Image
+Allow: /uploads/
+Allow: /images/
+
+User-agent: Bingbot
+Allow: /
+Disallow: /admin/
+
+# Sitemaps & Feeds
+Sitemap: https://mediafourtribuannews.my.id/sitemap.xml
+Sitemap: https://mediafourtribuannews.my.id/news-sitemap.xml
+Sitemap: https://mediafourtribuannews.my.id/rss.xml

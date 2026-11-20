@@ -79,6 +79,15 @@ export async function bootstrapPortal(force = false) {
     ])
     if (setRes?.data) {
       Object.assign(portalState.settings, setRes.data)
+      if (portalState.settings.google_site_verification) {
+        let gMeta = document.querySelector('meta[name="google-site-verification"]')
+        if (!gMeta) {
+          gMeta = document.createElement('meta')
+          gMeta.setAttribute('name', 'google-site-verification')
+          document.head.appendChild(gMeta)
+        }
+        gMeta.setAttribute('content', portalState.settings.google_site_verification)
+      }
     }
     if (catRes?.data) {
       portalState.categories = catRes.data

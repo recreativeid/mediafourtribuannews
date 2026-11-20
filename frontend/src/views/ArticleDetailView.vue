@@ -3,6 +3,7 @@ import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { api, resolveImg, formatDateID, formatNumber, timeAgoID } from '../api/client'
 import { isBookmarked, toggleBookmark, showToast } from '../composables/usePortal'
+import { setPageSeo, resetPageSeo } from '../composables/useSeo'
 import NewsCard from '../components/NewsCard.vue'
 import AdBanner from '../components/AdBanner.vue'
 import {
@@ -78,7 +79,15 @@ async function fetchArticle() {
     popular.value = popRes?.data || []
     ads.value = adRes?.data || []
     if (article.value?.title) {
-      document.title = `${article.value.title} — Media Four Tribuan News`
+      setPageSeo({
+        title: article.value.title,
+        description: article.value.excerpt,
+        keywords: article.value.tags,
+        image: article.value.thumbnail,
+        url: `/berita/${article.value.slug}`,
+        type: 'article',
+        article: article.value,
+      })
     }
   } catch (e) {
     console.error('Fetch article error:', e)
@@ -87,6 +96,11 @@ async function fetchArticle() {
     loading.value = false
   }
 }
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', onScroll)
+  resetPageSeo()
+})
 
 async function submitComment() {
   if (!article.value || !commentForm.value.name.trim() || !commentForm.value.comment.trim()) return

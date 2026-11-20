@@ -52,3 +52,10 @@ for (const r of routes) {
 }
 
 console.log(`[postbuild] Generated static fallbacks for ${routes.length} SPA routes + 404.html + .nojekyll`)
+
+// 4. Generate SEO Sitemaps and Feeds
+try {
+  require('./scripts/generate-seo.cjs')
+} catch (e) {
+  console.warn('[postbuild] Warning generating SEO files:', e)
+}

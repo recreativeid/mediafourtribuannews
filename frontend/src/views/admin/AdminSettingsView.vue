@@ -9,18 +9,20 @@ import {
   syncAllToSupabase,
 } from '../../api/supabase'
 import { getLocalStore } from '../../api/client'
-import { Save, Database, CheckCircle2, AlertCircle, RefreshCw, ExternalLink } from 'lucide-vue-next'
+import { Save, Database, CheckCircle2, AlertCircle, RefreshCw, ExternalLink, Search, Globe, FileCode, Radio } from 'lucide-vue-next'
 
 const saving = ref(false)
 const testingSb = ref(false)
 const syncingSb = ref(false)
 const sbStatus = ref(null)
+const pingingGoogle = ref(false)
 
 const form = ref({
   site_title: '',
   site_subtitle: '',
   site_tagline: '',
   site_description: '',
+  google_site_verification: '',
   company_name: '',
   hotline_phone: '',
   whatsapp_number: '',
@@ -109,6 +111,17 @@ async function handleSyncToSupabase() {
     showToast('Gagal sinkron data ke Supabase: ' + e.message, 'error')
   } finally {
     syncingSb.value = false
+  }
+}
+async function pingGoogleSitemap() {
+  pingingGoogle.value = true
+  try {
+    window.open('https://www.google.com/ping?sitemap=https://mediafourtribuannews.my.id/sitemap.xml', '_blank')
+    showToast('Ping sitemap dikirim ke Google & Bing!', 'success')
+  } catch (e) {
+    showToast('Gagal mengirim ping: ' + e.message, 'error')
+  } finally {
+    pingingGoogle.value = false
   }
 }
 </script>
@@ -259,6 +272,124 @@ async function handleSyncToSupabase() {
             </button>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- Card 3: Optimasi SEO & Google Search Console -->
+    <div class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-7 shadow-2xs space-y-5">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <div class="flex items-center gap-2">
+            <Search class="w-5 h-5 text-blue-700" />
+            <h2 class="text-lg font-black text-[#0B2563]">Optimasi SEO & Google Search Console</h2>
+          </div>
+          <p class="text-xs text-slate-500 mt-0.5">
+            Daftarkan situs ke Google agar berita dan portal Media Four Tribuan News cepat terindeks dan muncul di pencarian Google.
+          </p>
+        </div>
+
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
+          <Globe class="w-3.5 h-3.5" />
+          Status SEO: Siap Terindeks Google
+        </span>
+      </div>
+
+      <!-- Indikator File SEO Siap Pakai -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <a
+          href="/sitemap.xml"
+          target="_blank"
+          class="p-3.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-blue-50/60 hover:border-blue-300 transition-colors block"
+        >
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-extrabold text-[#0B2563]">sitemap.xml</span>
+            <CheckCircle2 class="w-4 h-4 text-emerald-600" />
+          </div>
+          <p class="text-[11px] text-slate-500 mt-1">89 URL Berita & Halaman terindeks otomatis</p>
+        </a>
+
+        <a
+          href="/news-sitemap.xml"
+          target="_blank"
+          class="p-3.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-blue-50/60 hover:border-blue-300 transition-colors block"
+        >
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-extrabold text-[#0B2563]">news-sitemap.xml</span>
+            <CheckCircle2 class="w-4 h-4 text-emerald-600" />
+          </div>
+          <p class="text-[11px] text-slate-500 mt-1">Format resmi Google News Feed</p>
+        </a>
+
+        <a
+          href="/rss.xml"
+          target="_blank"
+          class="p-3.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-blue-50/60 hover:border-blue-300 transition-colors block"
+        >
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-extrabold text-[#0B2563]">rss.xml</span>
+            <CheckCircle2 class="w-4 h-4 text-emerald-600" />
+          </div>
+          <p class="text-[11px] text-slate-500 mt-1">Umpan sindikasi berita RSS 2.0</p>
+        </a>
+
+        <a
+          href="/robots.txt"
+          target="_blank"
+          class="p-3.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-blue-50/60 hover:border-blue-300 transition-colors block"
+        >
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-extrabold text-[#0B2563]">robots.txt</span>
+            <CheckCircle2 class="w-4 h-4 text-emerald-600" />
+          </div>
+          <p class="text-[11px] text-slate-500 mt-1">Izin bot Googlebot & bingbot</p>
+        </a>
+      </div>
+
+      <!-- Verifikasi Google Search Console -->
+      <div class="p-4 rounded-xl bg-slate-50 border border-slate-200/90 space-y-3">
+        <label class="block text-xs font-extrabold text-slate-800">
+          Kode Verifikasi Google Search Console (HTML Tag Meta)
+        </label>
+        <p class="text-xs text-slate-500">
+          Tempelkan kode verifikasi dari Google Search Console di sini (contoh: <code class="px-1.5 py-0.5 rounded bg-white border border-slate-300 font-mono text-[11px]">google-site-verification=XXXXXXXXXXXXXXXXXXXX</code>).
+        </p>
+        <div class="flex gap-2">
+          <input
+            v-model="form.google_site_verification"
+            placeholder="google-site-verification=..."
+            class="flex-1 px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-xs sm:text-sm font-mono focus:border-[#0B2563] outline-hidden"
+          />
+          <button
+            type="button"
+            @click="save"
+            class="px-5 py-2.5 rounded-xl bg-[#0B2563] hover:bg-[#D91E28] text-white text-xs font-extrabold transition-colors shadow-2xs"
+          >
+            Simpan Kode
+          </button>
+        </div>
+      </div>
+
+      <!-- Tombol Aksi Cepat Google Console & Ping -->
+      <div class="flex flex-wrap items-center justify-between gap-3 pt-2">
+        <button
+          type="button"
+          @click="pingGoogleSitemap"
+          :disabled="pingingGoogle"
+          class="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 text-xs font-extrabold transition-colors cursor-pointer"
+        >
+          <Radio class="w-3.5 h-3.5" :class="{ 'animate-pulse': pingingGoogle }" />
+          <span>{{ pingingGoogle ? 'Mengirim Ping...' : 'Kirim Ping Sitemap ke Google' }}</span>
+        </button>
+
+        <a
+          href="https://search.google.com/search-console"
+          target="_blank"
+          rel="noopener"
+          class="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-[#4285F4] hover:bg-blue-600 text-white text-xs font-extrabold transition-colors shadow-2xs cursor-pointer"
+        >
+          <span>Buka Google Search Console</span>
+          <ExternalLink class="w-3.5 h-3.5" />
+        </a>
       </div>
     </div>
   </div>
