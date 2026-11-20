@@ -504,7 +504,7 @@ const activeTabTitle = computed(() => {
 
         <div class="space-y-4 text-xs sm:text-sm text-slate-700 leading-relaxed">
           <p>
-            <strong>Media Four Tribuan News</strong> yang dikelola oleh badan hukum <strong>{{ portalState.settings.company_name }}</strong> adalah portal media siber berita online nasional yang hadir menjawab kebutuhan publik Indonesia akan akses informasi jurnalistik yang cepat, faktual, mendalam, dan berimbang.
+            <strong>Media Four Tribuan News</strong> adalah portal media siber berita online nasional yang hadir menjawab kebutuhan publik Indonesia akan akses informasi jurnalistik yang cepat, faktual, mendalam, dan berimbang.
           </p>
           <p>
             Didirikan berlandaskan payung hukum <strong>Undang-Undang Republik Indonesia Nomor 40 Tahun 1999 tentang Pers</strong> serta sepenuhnya tunduk pada <strong>Pedoman Pemberitaan Media Siber (PPMS)</strong> yang ditetapkan oleh Dewan Pers, Media Four Tribuan News memposisikan diri sebagai pilar komunikasi masyarakat yang berintegritas dan terpercaya dalam mengawal kedaulatan Negara Kesatuan Republik Indonesia (NKRI).
