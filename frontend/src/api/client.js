@@ -691,6 +691,28 @@ export const api = {
       })
     }
 
+    // 10. Admin Pages Create: /admin/pages
+    if (path === '/admin/pages') {
+      store.pages = store.pages || JSON.parse(JSON.stringify(defaultPages))
+      const slug = body.slug || (body.title || 'halaman-baru').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+      const newPage = {
+        id: Date.now(),
+        slug,
+        title: body.title || 'Halaman Baru',
+        short_title: body.short_title || body.title || 'Halaman',
+        subtitle: body.subtitle || '',
+        summary: body.summary || '',
+        content: body.content || '',
+        status: body.status || 'published',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        ...body,
+      }
+      store.pages.push(newPage)
+      saveLocalStore(store)
+      return { data: newPage, message: 'Halaman statis berhasil ditambahkan' }
+    }
+
     return { data: null }
   },
 
@@ -973,6 +995,16 @@ export const api = {
         } catch (e) {}
       }
       return { message: 'Komentar berhasil dihapus' }
+    }
+
+    // 7. Delete Pages: /admin/pages/:slug
+    const pageMatch = path.match(/^\/admin\/pages\/([a-zA-Z0-9_-]+)$/)
+    if (pageMatch) {
+      const slug = pageMatch[1]
+      store.pages = store.pages || JSON.parse(JSON.stringify(defaultPages))
+      store.pages = store.pages.filter((p) => p.slug !== slug)
+      saveLocalStore(store)
+      return { message: 'Halaman berhasil dihapus' }
     }
 
     return { message: 'Operasi selesai' }

@@ -207,5 +207,65 @@ export const defaultPages = [
         desc: 'Segala bentuk keberatan atau sengketa pemberitaan diselesaikan melalui mekanisme Hak Jawab, Hak Koreksi, atau mediasi Dewan Pers sesuai koridor hukum pers yang berlaku.'
       }
     ]
+  },
+  {
+    id: 7,
+    slug: 'indeks',
+    title: 'Indeks',
+    short_title: 'Indeks',
+    subtitle: 'Arsip & Indeks Berita Berdasarkan Tanggal dan Kanal',
+    updated_at: '2026-11-20T10:00:00.000Z',
+    status: 'published',
+    summary: 'Daftar indeks arsip pemberitaan Media Four Tribuan News.'
+  },
+  {
+    id: 8,
+    slug: 'kode-etik-copy',
+    title: 'Kode ETIK Copy',
+    short_title: 'Kode Etik Copy',
+    subtitle: 'Salinan Cadangan Dokumen Kode Etik Publikasi',
+    updated_at: '2026-11-20T10:00:00.000Z',
+    status: 'published',
+    summary: 'Salinan resmi kode etik jurnalistik.'
+  },
+  {
+    id: 9,
+    slug: 'pelantikan-kepala-sekolah-bkn',
+    title: 'Pelantikan ratusan kepala sekolah diduga Tanpa Pertek BKN dikendari – Sulawesi tenggara dikeluhkan',
+    short_title: 'Pelantikan Kepala Sekolah',
+    subtitle: 'Liputan Khusus & Halaman Klarifikasi Pemberitaan Daerah',
+    updated_at: '2026-11-20T10:00:00.000Z',
+    status: 'published',
+    summary: 'Klarifikasi dan pemberitaan pelantikan kepala sekolah di Kendari Sulawesi Tenggara.'
+  },
+  {
+    id: 10,
+    slug: 'tentang-kami',
+    title: 'tentang kami – Privacy Policy Page',
+    short_title: 'Tentang Kami',
+    subtitle: 'Informasi Profil Portal & Pedoman Privasi',
+    updated_at: '2026-11-20T10:00:00.000Z',
+    status: 'published',
+    summary: 'Profil ringkas portal berita dan ketentuan privasi pembaca.'
+  },
+  {
+    id: 11,
+    slug: 'redaksi-susunan',
+    title: 'Redaksi',
+    short_title: 'Redaksi Susunan',
+    subtitle: 'Susunan Dewan Redaksi & Manajemen Pelaksana',
+    updated_at: '2026-11-20T10:00:00.000Z',
+    status: 'published',
+    summary: 'Boks susunan redaksi dan penanggung jawab pers.'
+  },
+  {
+    id: 12,
+    slug: 'kode-etik-kej',
+    title: 'Kode ETIK',
+    short_title: 'Kode Etik Nasional',
+    subtitle: 'Kode Etik Wartawan Indonesia (KEJ)',
+    updated_at: '2026-11-20T10:00:00.000Z',
+    status: 'published',
+    summary: 'Landasan etika kode etik jurnalistik nasional.'
   }
 ]
