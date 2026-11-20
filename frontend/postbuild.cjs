@@ -18,6 +18,7 @@ const routes = [
   'admin/komentar',
   'admin/iklan',
   'admin/redaksi',
+  'admin/halaman',
   'admin/pengguna',
   'admin/akun',
   'admin/pengaturan',
@@ -25,6 +26,14 @@ const routes = [
   'berita',
   'cari',
   'tentang',
+  'redaksi',
+  'kode-etik',
+  'pedoman-media-siber',
+  'privacy-policy',
+  'kebijakan-privasi',
+  'disclaimer',
+  'dewan-pers',
+  'indeks',
 ]
 
 // 1. Copy to 404.html

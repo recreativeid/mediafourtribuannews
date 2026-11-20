@@ -1,4 +1,5 @@
 import seedData from '../data/seedData.json'
+import { defaultPages } from '../data/pagesData.js'
 import { getSupabaseClient, getSupabaseConfig } from './supabase'
 
 export const SESSION_DURATION_MS = 20 * 60 * 1000 // 20 menit
@@ -12,6 +13,9 @@ function loadLocalStore() {
     if (raw) {
       const parsed = JSON.parse(raw)
       if (parsed.articles && parsed.categories) {
+        if (!parsed.pages || !parsed.pages.length) {
+          parsed.pages = JSON.parse(JSON.stringify(defaultPages))
+        }
         // Auto-enrich legacy comments with article metadata if missing
         if (parsed.comments?.length && parsed.articles?.length) {
           parsed.comments.forEach((cm) => {
@@ -42,6 +46,7 @@ function loadLocalStore() {
     videos: [...(seedData.videos || [])],
     comments: [...(seedData.comments || [])],
     editorial_team: [...(seedData.editorial_team || [])],
+    pages: JSON.parse(JSON.stringify(defaultPages)),
     ads: [...(seedData.ads || [])],
     users: [...(seedData.users || [])],
     next_ids: { ...(seedData.next_ids || {}) },
@@ -297,8 +302,13 @@ export const api = {
       return { data: store.ads }
     }
 
-    // 6. /editorial or /admin/editorial
-    if (path.startsWith('/editorial') || path.startsWith('/admin/editorial')) {
+    // 6. /editorial or /admin/editorial or /redaksi or /admin/redaksi
+    if (
+      path.startsWith('/editorial') ||
+      path.startsWith('/admin/editorial') ||
+      path.startsWith('/redaksi') ||
+      path.startsWith('/admin/redaksi')
+    ) {
       if (supabase) {
         try {
           const { data, error } = await supabase.from('editorial_team').select('*').order('sort_order', { ascending: true })
@@ -309,6 +319,18 @@ export const api = {
       }
       const store = getLocalStore()
       return { data: store.editorial_team }
+    }
+
+    // 6b. /pages or /admin/pages
+    if (path.startsWith('/pages') || path.startsWith('/admin/pages')) {
+      const store = getLocalStore()
+      store.pages = store.pages || JSON.parse(JSON.stringify(defaultPages))
+      const match = path.match(/^\/(?:admin\/)?pages\/([a-zA-Z0-9_-]+)$/)
+      if (match) {
+        const p = store.pages.find((pg) => pg.slug === match[1])
+        return { data: p || null }
+      }
+      return { data: store.pages }
     }
 
     // 7. /admin/comments
@@ -602,8 +624,8 @@ export const api = {
       return { data: newAd, message: 'Iklan berhasil ditambahkan' }
     }
 
-    // 7. Admin Editorial: /admin/editorial
-    if (path === '/admin/editorial') {
+    // 7. Admin Editorial: /admin/editorial or /admin/redaksi
+    if (path === '/admin/editorial' || path === '/admin/redaksi') {
       const nextId = (store.next_ids.editorial_team = (store.next_ids.editorial_team || 0) + 1)
       const newMember = {
         id: nextId,
@@ -806,8 +828,8 @@ export const api = {
       return { data: store.ads[idx], message: 'Iklan berhasil diperbarui' }
     }
 
-    // 7. Update Editorial: /admin/editorial/:id
-    const editMatch = path.match(/^\/admin\/editorial\/(\d+)$/)
+    // 7. Update Editorial: /admin/editorial/:id or /admin/redaksi/:id
+    const editMatch = path.match(/^\/admin\/(?:editorial|redaksi)\/(\d+)$/)
     if (editMatch) {
       const id = Number(editMatch[1])
       const idx = store.editorial_team.findIndex((e) => e.id === id)
@@ -820,6 +842,21 @@ export const api = {
         } catch (e) {}
       }
       return { data: store.editorial_team[idx], message: 'Anggota redaksi diperbarui' }
+    }
+
+    // 7b. Update Pages: /admin/pages/:slug
+    const pageMatch = path.match(/^\/admin\/pages\/([a-zA-Z0-9_-]+)$/)
+    if (pageMatch) {
+      const slug = pageMatch[1]
+      store.pages = store.pages || JSON.parse(JSON.stringify(defaultPages))
+      const idx = store.pages.findIndex((p) => p.slug === slug)
+      if (idx !== -1) {
+        store.pages[idx] = { ...store.pages[idx], ...body, updated_at: new Date().toISOString() }
+      } else {
+        store.pages.push({ ...body, slug, updated_at: new Date().toISOString() })
+      }
+      saveLocalStore(store)
+      return { data: store.pages.find((p) => p.slug === slug), message: 'Halaman statis berhasil diperbarui' }
     }
 
     // 8. Update Comments (Approve/Reject): /admin/comments/:id or /admin/comments/:id/status
@@ -910,8 +947,8 @@ export const api = {
       return { message: 'Iklan berhasil dihapus' }
     }
 
-    // 5. Delete Editorial: /admin/editorial/:id
-    const editMatch = path.match(/^\/admin\/editorial\/(\d+)$/)
+    // 5. Delete Editorial: /admin/editorial/:id or /admin/redaksi/:id
+    const editMatch = path.match(/^\/admin\/(?:editorial|redaksi)\/(\d+)$/)
     if (editMatch) {
       const id = Number(editMatch[1])
       store.editorial_team = store.editorial_team.filter((e) => e.id !== id)
