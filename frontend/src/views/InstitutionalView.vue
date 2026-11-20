@@ -39,13 +39,13 @@ const team = ref([])
 const pagesData = ref([...defaultPages])
 
 const tabs = [
+  { id: 'profil', label: 'Tentang Kami', icon: BookOpen, routePath: '/tentang' },
   { id: 'redaksi', label: 'REDAKSI', icon: Users, routePath: '/redaksi' },
   { id: 'kode-etik', label: 'Kode Etik', icon: ShieldCheck, routePath: '/kode-etik' },
   { id: 'pedoman', label: 'Pedoman Media Siber', icon: FileCheck, routePath: '/pedoman-media-siber' },
-  { id: 'privacy', label: 'Privacy Policy', icon: Lock, routePath: '/privacy-policy' },
+  { id: 'privacy', label: 'Kebijakan Privasi', icon: Lock, routePath: '/privacy-policy' },
   { id: 'disclaimer', label: 'Disclaimer', icon: AlertTriangle, routePath: '/disclaimer' },
   { id: 'dewan-pers', label: 'Dewan PERS', icon: Scale, routePath: '/dewan-pers' },
-  { id: 'profil', label: 'Profil & Kontak', icon: BookOpen, routePath: '/tentang' },
 ]
 
 function determineTabFromRoute() {
@@ -55,9 +55,9 @@ function determineTabFromRoute() {
   else if (p.includes('/privacy-policy') || p.includes('/kebijakan-privasi')) activeTab.value = 'privacy'
   else if (p.includes('/disclaimer')) activeTab.value = 'disclaimer'
   else if (p.includes('/dewan-pers')) activeTab.value = 'dewan-pers'
-  else if (p.includes('/tentang')) activeTab.value = 'profil'
   else if (p.includes('/redaksi')) activeTab.value = 'redaksi'
-  else activeTab.value = props.defaultTab || 'redaksi'
+  else if (p.includes('/tentang') || p.includes('/kontak')) activeTab.value = 'profil'
+  else activeTab.value = props.defaultTab || 'profil'
 }
 
 watch(() => route.path, determineTabFromRoute, { immediate: true })
@@ -469,66 +469,219 @@ const activeTabTitle = computed(() => {
     </div>
 
     <!-- ============================================================== -->
-    <!-- TAB 7: PROFIL & KONTAK                                        -->
+    <!-- TAB 1: TENTANG KAMI & PROFIL REDAKSI                           -->
     <!-- ============================================================== -->
     <div v-if="activeTab === 'profil'" class="space-y-6">
-      <div class="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-2xs space-y-5">
+      <!-- Hero Header Tentang Kami -->
+      <div class="bg-gradient-to-r from-[#0B2563] via-[#081A47] to-[#1648B8] text-white rounded-3xl p-6 sm:p-8 shadow-md">
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-[#F5B700] text-[11px] font-black uppercase tracking-wider mb-2">
+          <BookOpen class="w-3.5 h-3.5" /> Mengenal Lebih Dekat
+        </span>
+        <h1 class="text-2xl sm:text-3xl font-black font-editorial tracking-tight text-white">
+          TENTANG MEDIA FOUR TRIBUAN NEWS
+        </h1>
+        <p class="text-xs sm:text-sm text-blue-100/90 mt-1">
+          Portal Berita Siber Nasional — Aktual, Terpercaya, Independen, Tegas, Tajam, dan Profesional.
+        </p>
+      </div>
+
+      <!-- Apa itu Media Four Tribuan News -->
+      <div class="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-2xs space-y-6">
         <div class="flex flex-col sm:flex-row sm:items-center gap-5 pb-5 border-b border-slate-100">
           <img src="/images/logo-mftn.jpg" alt="Logo Media Four Tribuan News" class="h-20 w-auto object-contain self-start" />
-          <div>
-            <span class="inline-block px-3 py-1 rounded-full bg-[#0B2563] text-[#F5B700] text-[10px] font-black uppercase tracking-widest mb-2">
-              Profil Perusahaan Pers
+          <div class="space-y-1">
+            <span class="inline-block px-3 py-0.5 rounded-full bg-blue-50 text-[#0B2563] text-[10px] font-black uppercase tracking-widest">
+              Identitas Resmi Perusahaan Pers
             </span>
-            <h1 class="text-2xl sm:text-3xl font-bold font-editorial text-[#0B2563]">
+            <h2 class="text-xl sm:text-2xl font-black text-[#0B2563]">
               {{ portalState.settings.site_title }}
-            </h1>
-            <p class="text-xs sm:text-sm font-bold text-[#D91E28] mt-0.5">
-              {{ portalState.settings.site_tagline }}
+            </h2>
+            <p class="text-xs sm:text-sm font-bold text-[#D91E28]">
+              {{ portalState.settings.site_tagline }} &bull; Tegas &bull; Tajam &bull; Profesional
             </p>
           </div>
         </div>
 
-        <p class="text-sm text-slate-700 leading-relaxed">
-          <strong>Media Four Tribuan News</strong> yang dikelola oleh <strong>{{ portalState.settings.company_name }}</strong>
-          adalah portal berita digital nasional yang hadir menyajikan jurnalisme cepat, terverifikasi, berimbang, dan
-          independen demi kepentingan masyarakat dan bangsa Indonesia.
-        </p>
-
-        <!-- Kemitraan Pers Callout -->
-        <div class="p-4 rounded-2xl bg-blue-50/80 border border-blue-200/80 text-xs sm:text-sm text-slate-800 space-y-1.5">
-          <div class="font-bold text-[#0B2563] flex items-center gap-1.5">
-            <Shield class="w-4 h-4 text-[#D91E28]" /> Kemitraan Jurnalistik & Publikasi Resmi
-          </div>
-          <p class="leading-relaxed">
-            "{{ redaksiPage.tni_polri_support }}"
+        <div class="space-y-4 text-xs sm:text-sm text-slate-700 leading-relaxed">
+          <p>
+            <strong>Media Four Tribuan News</strong> yang dikelola oleh badan hukum <strong>{{ portalState.settings.company_name }}</strong> adalah portal media siber berita online nasional yang hadir menjawab kebutuhan publik Indonesia akan akses informasi jurnalistik yang cepat, faktual, mendalam, dan berimbang.
           </p>
+          <p>
+            Didirikan berlandaskan payung hukum <strong>Undang-Undang Republik Indonesia Nomor 40 Tahun 1999 tentang Pers</strong> serta sepenuhnya tunduk pada <strong>Pedoman Pemberitaan Media Siber (PPMS)</strong> yang ditetapkan oleh Dewan Pers, Media Four Tribuan News memposisikan diri sebagai pilar komunikasi masyarakat yang berintegritas dan terpercaya dalam mengawal kedaulatan Negara Kesatuan Republik Indonesia (NKRI).
+          </p>
+        </div>
+
+        <!-- Callout Kemitraan Publikasi TNI - Polri -->
+        <div class="rounded-2xl bg-gradient-to-br from-red-50 to-amber-50/60 border-2 border-red-200/80 p-5 space-y-3">
+          <div class="flex items-center gap-2 text-sm font-black text-[#D91E28]">
+            <ShieldCheck class="w-5 h-5 text-[#D91E28] shrink-0" />
+            <span>Kemitraan Publikasi Pers — Sinergitas Bersama Polri & TNI</span>
+          </div>
+          <blockquote class="text-xs sm:text-sm text-slate-800 italic leading-relaxed pl-3 border-l-4 border-[#D91E28]">
+            "Dukungan Media Four Tribuan News terhadap Polri TNI merupakan bentuk kemitraan pers yang dibangun atas dasar profesionalisme, integritas, dan tanggung jawab jurnalistik. Kami percaya bahwa setiap kinerja positif Polri TNI patut diketahui masyarakat."
+          </blockquote>
+          <p class="text-xs sm:text-sm text-slate-700 leading-relaxed font-medium">
+            Media Four Tribuan News bukan sekadar hadir untuk memberitakan, tetapi berkomitmen menjadi mitra publikasi yang konsisten dalam menyampaikan pengabdian, transparansi penegakan hukum, stabilitas keamanan, dan kinerja nyata Polri dan TNI kepada seluruh masyarakat di pelosok Nusantara.
+          </p>
+        </div>
+
+        <!-- 4 Pilar Visi & Misi Redaksi -->
+        <div class="space-y-3 pt-2">
+          <h3 class="text-base font-extrabold text-[#0B2563] flex items-center gap-2">
+            <Award class="w-4 h-4 text-[#F5B700]" /> Visi & 4 Pilar Misi Redaksi
+          </h3>
+          <p class="text-xs text-slate-600">
+            <strong>Visi:</strong> Menjadi portal berita siber nasional terkemuka dan terpercaya dalam menyuarakan kebenaran fakta, mencerdaskan kehidupan bangsa, menjaga persatuan keberagaman, serta mengawal pembangunan nasional yang berkeadilan.
+          </p>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+            <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+              <div class="font-bold text-xs text-[#0B2563] flex items-center gap-1.5">
+                <CheckCircle2 class="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                1. Jurnalisme Terpercaya & Berimbang
+              </div>
+              <p class="text-[11px] text-slate-600 leading-relaxed">
+                Menghasilkan produk jurnalistik faktual, independen, menguji kebenaran informasi (*check and recheck*), serta menerapkan asas praduga tak bersalah.
+              </p>
+            </div>
+
+            <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+              <div class="font-bold text-xs text-[#0B2563] flex items-center gap-1.5">
+                <CheckCircle2 class="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                2. Kemitraan Publikasi Strategis
+              </div>
+              <p class="text-[11px] text-slate-600 leading-relaxed">
+                Membangun jembatan komunikasi antara institusi penegak hukum (Polri), pertahanan (TNI), dan instansi pemerintah dengan masyarakat luas.
+              </p>
+            </div>
+
+            <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+              <div class="font-bold text-xs text-[#0B2563] flex items-center gap-1.5">
+                <CheckCircle2 class="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                3. Pilar Keempat Demokrasi
+              </div>
+              <p class="text-[11px] text-slate-600 leading-relaxed">
+                Menjalankan fungsi kontrol sosial yang konstruktif, adil, profesional, dan terbuka untuk dikontrol oleh masyarakat demi kepentingan publik.
+              </p>
+            </div>
+
+            <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+              <div class="font-bold text-xs text-[#0B2563] flex items-center gap-1.5">
+                <CheckCircle2 class="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                4. Integritas Moral & Anti-Hoaks
+              </div>
+              <p class="text-[11px] text-slate-600 leading-relaxed">
+                Melawan secara tegas peredaran berita palsu (hoaks), fitnah, ujaran kebencian, dan manipulasi informasi di ruang publik siber.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Fokus Kanal Berita -->
+        <div class="space-y-3 pt-2">
+          <h3 class="text-base font-extrabold text-[#0B2563]">Cakupan Rubrikasi & Kanal Berita</h3>
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs">
+            <div class="p-3 rounded-xl bg-blue-50/50 border border-blue-100">
+              <div class="font-black text-[#0B2563]">Nasional & IKN</div>
+              <p class="text-[11px] text-slate-500 mt-0.5">Kebijakan pusat, kementerian, dan pembangunan negara.</p>
+            </div>
+            <div class="p-3 rounded-xl bg-red-50/50 border border-red-100">
+              <div class="font-black text-[#D91E28]">Polri - TNI & Hukum</div>
+              <p class="text-[11px] text-slate-500 mt-0.5">Penegakan hukum, kamtibmas, dan teritorial Nusantara.</p>
+            </div>
+            <div class="p-3 rounded-xl bg-amber-50/50 border border-amber-100">
+              <div class="font-black text-amber-800">Daerah Nusantara</div>
+              <p class="text-[11px] text-slate-500 mt-0.5">Kabar peristiwa dari 38 provinsi di seluruh pelosok.</p>
+            </div>
+            <div class="p-3 rounded-xl bg-emerald-50/50 border border-emerald-100">
+              <div class="font-black text-emerald-800">Ekonomi & Bisnis</div>
+              <p class="text-[11px] text-slate-500 mt-0.5">Pasar, komoditas, inflasi, perbankan, dan UMKM digital.</p>
+            </div>
+            <div class="p-3 rounded-xl bg-purple-50/50 border border-purple-100">
+              <div class="font-black text-purple-800">Politik & Demokrasi</div>
+              <p class="text-[11px] text-slate-500 mt-0.5">Dinamika legislatif, partai, pilkada, dan etika berbangsa.</p>
+            </div>
+            <div class="p-3 rounded-xl bg-sky-50/50 border border-sky-100">
+              <div class="font-black text-sky-800">Teknologi & Pendidikan</div>
+              <p class="text-[11px] text-slate-500 mt-0.5">Inovasi siber, kurikulum merdeka, dan olahraga prestasi.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tombol Cepat Menuju Dokumen Legalitas & Disclaimer -->
+        <div class="p-5 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div class="space-y-1 text-center sm:text-left">
+            <div class="text-xs font-black text-[#0B2563] uppercase tracking-wider">
+              Legalitas & Sangkalan Hukum Pers
+            </div>
+            <p class="text-[11px] text-slate-500">
+              Pelajari identitas resmi wartawan, larangan gratifikasi, serta sangkalan hukum portal.
+            </p>
+          </div>
+          <div class="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              @click="activeTab = 'disclaimer'"
+              class="px-4 py-2 rounded-xl bg-[#D91E28] hover:bg-red-700 text-white text-xs font-extrabold inline-flex items-center gap-1.5 transition-colors shadow-2xs cursor-pointer"
+            >
+              <AlertTriangle class="w-3.5 h-3.5" />
+              <span>Buka Disclaimer &rarr;</span>
+            </button>
+            <button
+              type="button"
+              @click="activeTab = 'redaksi'"
+              class="px-4 py-2 rounded-xl bg-[#0B2563] hover:bg-blue-900 text-white text-xs font-extrabold inline-flex items-center gap-1.5 transition-colors shadow-2xs cursor-pointer"
+            >
+              <Users class="w-3.5 h-3.5" />
+              <span>Susunan Redaksi</span>
+            </button>
+          </div>
         </div>
       </div>
 
-      <!-- Kontak Redaksi -->
-      <div class="rounded-3xl bg-gradient-to-br from-[#081A47] to-[#0B2563] text-white p-6 sm:p-8 shadow-md space-y-4">
-        <h2 class="text-lg font-black text-[#F5B700]">Kontak Redaksi, Iklan & Informasi</h2>
+      <!-- Kontak Redaksi, Iklan & Pengaduan Hak Jawab -->
+      <div id="kontak" class="rounded-3xl bg-gradient-to-br from-[#081A47] to-[#0B2563] text-white p-6 sm:p-8 shadow-md space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-4">
+          <div>
+            <span class="text-[10px] uppercase font-bold text-[#F5B700] tracking-wider">Layanan Komunikasi Publik</span>
+            <h2 class="text-lg font-black text-white">Kontak Redaksi, Iklan & Pengaduan Hak Jawab</h2>
+          </div>
+          <div class="text-[11px] text-blue-200">
+            Layanan pengaduan hak jawab dan hak koreksi terbuka 24 jam.
+          </div>
+        </div>
+
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs sm:text-sm">
           <div class="bg-white/10 rounded-2xl p-4 space-y-1.5">
             <MapPin class="w-5 h-5 text-[#F5B700]" />
-            <div class="font-bold">Alamat Kantor Redaksi</div>
-            <p class="text-blue-100/85 text-xs">{{ portalState.settings.office_address }}</p>
+            <div class="font-bold text-white">Alamat Kantor Redaksi</div>
+            <p class="text-blue-100/85 text-xs leading-relaxed">{{ portalState.settings.office_address }}</p>
           </div>
+
           <div class="bg-white/10 rounded-2xl p-4 space-y-1.5">
             <Phone class="w-5 h-5 text-[#F5B700]" />
-            <div class="font-bold">Hotline / WhatsApp Resmi</div>
+            <div class="font-bold text-white">Hotline / WhatsApp Resmi</div>
             <a
               :href="`https://wa.me/${portalState.settings.whatsapp_number}`"
               target="_blank"
-              class="text-blue-100 hover:text-[#F5B700] text-xs font-semibold block"
+              rel="noopener noreferrer"
+              class="text-blue-100 hover:text-[#F5B700] text-xs font-semibold block transition-colors"
             >
               {{ portalState.settings.hotline_phone }}
             </a>
+            <p class="text-[10px] text-blue-200/70">Senin - Minggu (Pelayanan Media)</p>
           </div>
+
           <div class="bg-white/10 rounded-2xl p-4 space-y-1.5">
             <Mail class="w-5 h-5 text-[#F5B700]" />
-            <div class="font-bold">Email Redaksi</div>
-            <p class="text-blue-100/85 text-xs break-all">{{ portalState.settings.redaksi_email }}</p>
+            <div class="font-bold text-white">Email Redaksi & Kerjasama</div>
+            <a
+              :href="`mailto:${portalState.settings.redaksi_email}`"
+              class="text-blue-100 hover:text-[#F5B700] text-xs font-semibold block break-all transition-colors"
+            >
+              {{ portalState.settings.redaksi_email }}
+            </a>
+            <p class="text-[10px] text-blue-200/70">Kirimkan rilis pers, hak jawab, atau penawaran iklan.</p>
           </div>
         </div>
       </div>

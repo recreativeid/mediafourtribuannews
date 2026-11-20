@@ -44,6 +44,8 @@ const routes = [
       { path: 'disclaimer', name: 'disclaimer', component: InstitutionalView, props: { defaultTab: 'disclaimer' } },
       { path: 'dewan-pers', name: 'dewan-pers', component: InstitutionalView, props: { defaultTab: 'dewan-pers' } },
       { path: 'tentang', name: 'about', component: InstitutionalView, props: { defaultTab: 'profil' } },
+      { path: 'tentang-kami', name: 'about-us', component: InstitutionalView, props: { defaultTab: 'profil' } },
+      { path: 'kontak', name: 'contact', component: InstitutionalView, props: { defaultTab: 'profil' } },
     ],
   },
   {

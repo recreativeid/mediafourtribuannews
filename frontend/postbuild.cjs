@@ -34,6 +34,8 @@ const routes = [
   'disclaimer',
   'dewan-pers',
   'indeks',
+  'tentang-kami',
+  'kontak',
 ]
 
 // 1. Copy to 404.html

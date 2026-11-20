@@ -96,18 +96,29 @@ function openQuickTag(tag) {
             </span>
           </div>
 
-          <div class="flex items-center gap-3 shrink-0">
+          <div class="flex items-center gap-2 sm:gap-2.5 shrink-0 text-[11px]">
+            <router-link to="/tentang" class="hover:text-[#F5B700] transition-colors font-semibold">
+              Tentang Kami
+            </router-link>
+            <span class="text-white/30">|</span>
             <router-link to="/redaksi" class="hover:text-[#F5B700] transition-colors font-semibold">
               Redaksi
             </router-link>
-            <router-link to="/kode-etik" class="hidden sm:inline hover:text-[#F5B700] transition-colors font-semibold">
-              Kode Etik
+            <span class="text-white/30">|</span>
+            <router-link to="/tentang#kontak" class="hover:text-[#F5B700] transition-colors font-semibold">
+              Kontak
             </router-link>
-            <router-link to="/indeks" class="hidden sm:inline hover:text-[#F5B700] transition-colors font-semibold">
-              Indeks
+            <span class="text-white/30 hidden sm:inline">|</span>
+            <router-link to="/pedoman-media-siber" class="hidden sm:inline hover:text-[#F5B700] transition-colors font-semibold">
+              Pedoman Media Siber
             </router-link>
-            <router-link to="/tentang" class="hover:text-[#F5B700] transition-colors font-semibold">
-              Tentang Kami
+            <span class="text-white/30 hidden md:inline">|</span>
+            <router-link to="/privacy-policy" class="hidden md:inline hover:text-[#F5B700] transition-colors font-semibold">
+              Kebijakan Privasi
+            </router-link>
+            <span class="text-white/30">|</span>
+            <router-link to="/disclaimer" class="hover:text-[#F5B700] transition-colors font-semibold">
+              Disclaimer
             </router-link>
           </div>
         </div>
@@ -335,19 +346,23 @@ function openQuickTag(tag) {
             Email Redaksi: <span class="text-white font-bold">{{ portalState.settings.redaksi_email }}</span>
           </div>
 
-          <!-- Navigasi Menu: REDAKSI - Indeks - Kode Etik - Privacy Policy - Disclaimer - Pedoman Media Siber -->
-          <nav class="flex flex-wrap items-center justify-center gap-x-3.5 gap-y-2 text-xs font-bold text-slate-300 pt-1 tracking-wide" aria-label="Menu Institusional Redaksi">
-            <router-link to="/redaksi" class="hover:text-[#F5B700] transition-colors">REDAKSI</router-link>
-            <span class="text-slate-500 font-normal">-</span>
-            <router-link to="/indeks" class="hover:text-[#F5B700] transition-colors">Indeks</router-link>
-            <span class="text-slate-500 font-normal">-</span>
-            <router-link to="/kode-etik" class="hover:text-[#F5B700] transition-colors">Kode Etik</router-link>
-            <span class="text-slate-500 font-normal">-</span>
-            <router-link to="/privacy-policy" class="hover:text-[#F5B700] transition-colors">Privacy Policy</router-link>
-            <span class="text-slate-500 font-normal">-</span>
-            <router-link to="/disclaimer" class="hover:text-[#F5B700] transition-colors">Disclaimer</router-link>
-            <span class="text-slate-500 font-normal">-</span>
+          <!-- Navigasi Menu: Tentang Kami | Redaksi | Kontak | Pedoman Media Siber | Kebijakan Privasi | Disclaimer | Kode Etik | Indeks -->
+          <nav class="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-xs font-bold text-slate-300 pt-1 tracking-wide" aria-label="Menu Institusional Redaksi">
+            <router-link to="/tentang" class="hover:text-[#F5B700] transition-colors">Tentang Kami</router-link>
+            <span class="text-slate-500 font-normal">|</span>
+            <router-link to="/redaksi" class="hover:text-[#F5B700] transition-colors">Redaksi</router-link>
+            <span class="text-slate-500 font-normal">|</span>
+            <router-link to="/tentang#kontak" class="hover:text-[#F5B700] transition-colors">Kontak</router-link>
+            <span class="text-slate-500 font-normal">|</span>
             <router-link to="/pedoman-media-siber" class="hover:text-[#F5B700] transition-colors">Pedoman Media Siber</router-link>
+            <span class="text-slate-500 font-normal">|</span>
+            <router-link to="/privacy-policy" class="hover:text-[#F5B700] transition-colors">Kebijakan Privasi</router-link>
+            <span class="text-slate-500 font-normal">|</span>
+            <router-link to="/disclaimer" class="hover:text-[#F5B700] transition-colors">Disclaimer</router-link>
+            <span class="text-slate-500 font-normal">|</span>
+            <router-link to="/kode-etik" class="hover:text-[#F5B700] transition-colors">Kode Etik</router-link>
+            <span class="text-slate-500 font-normal">|</span>
+            <router-link to="/indeks" class="hover:text-[#F5B700] transition-colors">Indeks</router-link>
           </nav>
 
           <!-- Copyright & Kembali ke Atas (Teks Tertulis, Bukan Tombol Bulat) -->
