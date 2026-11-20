@@ -8,7 +8,7 @@ export const defaultPages = [
     updated_at: '2026-11-20T10:00:00.000Z',
     status: 'published',
     summary: 'Landasan etika pers, kemitraan publikasi TNI-Polri, dan susunan dewan redaksi Media Four Tribuan News.',
-    tni_polri_support: 'Dukungan MJMTP terhadap Polri TNI merupakan bentuk kemitraan pers yang dibangun atas dasar profesionalisme, integritas, dan tanggung jawab jurnalistik. Kami percaya bahwa setiap kinerja positif Polri tni patut diketahui masyarakat.',
+    tni_polri_support: 'Dukungan Media Four Tribuan News terhadap Polri TNI merupakan bentuk kemitraan pers yang dibangun atas dasar profesionalisme, integritas, dan tanggung jawab jurnalistik. Kami percaya bahwa setiap kinerja positif Polri TNI patut diketahui masyarakat.',
     moral_foundation: [
       'Kemerdekaan berpendapat, berekspresi, dan pers adalah hak asasi manusia yang dilindungi Pancasila, Undang-Undang Dasar 1945, dan Deklarasi Universal Hak Asasi Manusia PBB.',
       'Kemerdekaan pers adalah sarana masyarakat untuk memperoleh informasi dan berkomunikasi, guna memenuhi kebutuhan hakiki dan meningkatkan kualitas kehidupan manusia.',
@@ -26,8 +26,8 @@ export const defaultPages = [
     updated_at: '2026-11-20T10:00:00.000Z',
     status: 'published',
     summary: 'Komitmen etika jurnalistik pers dan kemitraan publikasi kinerja Polri dan TNI se-Nusantara.',
-    commitment_text: 'MJMTP bukan sekadar hadir untuk memberitakan, tetapi berkomitmen menjadi mitra publikasi yang konsisten dalam menyampaikan pengabdian dan kinerja Polri tni kepada seluruh masyarakat Nusantara.',
-    tni_polri_support: 'Dukungan MJMTP terhadap Polri TNI merupakan bentuk kemitraan pers yang dibangun atas dasar profesionalisme, integritas, dan tanggung jawab jurnalistik. Kami percaya bahwa setiap kinerja positif Polri tni patut diketahui masyarakat.',
+    commitment_text: 'Media Four Tribuan News bukan sekadar hadir untuk memberitakan, tetapi berkomitmen menjadi mitra publikasi yang konsisten dalam menyampaikan pengabdian dan kinerja Polri TNI kepada seluruh masyarakat Nusantara.',
+    tni_polri_support: 'Dukungan Media Four Tribuan News terhadap Polri TNI merupakan bentuk kemitraan pers yang dibangun atas dasar profesionalisme, integritas, dan tanggung jawab jurnalistik. Kami percaya bahwa setiap kinerja positif Polri TNI patut diketahui masyarakat.',
     articles: [
       {
         pasal: 1,

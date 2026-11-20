@@ -241,7 +241,7 @@ onMounted(loadPages)
           <!-- Komitmen Kode Etik -->
           <div v-if="editingPage.slug === 'kode-etik'">
             <label class="block text-xs font-extrabold text-[#0B2563] uppercase tracking-wider mb-1">
-              Teks Komitmen Publikasi MJMTP / Mitra Polri-TNI
+              Teks Komitmen Publikasi Media Four Tribuan News / Mitra Polri-TNI
             </label>
             <textarea
               v-model="editForm.commitment_text"

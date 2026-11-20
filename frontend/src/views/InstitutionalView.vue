@@ -322,30 +322,22 @@ const activeTabTitle = computed(() => {
 
       <!-- 11 Pasal Kode Etik Jurnalistik (KEJ Dewan Pers) -->
       <div class="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-2xs space-y-5">
-        <div class="flex items-center gap-2.5 pb-3 border-b border-slate-100">
-          <span class="w-9 h-9 rounded-xl bg-red-50 text-[#D91E28] flex items-center justify-center font-black">
-            11
-          </span>
-          <div>
-            <h2 class="text-lg font-black text-[#0B2563]">11 Pasal Kode Etik Jurnalistik (KEJ)</h2>
-            <p class="text-xs text-slate-500">Ditetapkan oleh Dewan Pers sebagai pedoman mutlak wartawan Indonesia</p>
-          </div>
+        <div class="pb-3 border-b border-slate-100">
+          <h2 class="text-lg font-black text-[#0B2563]">Sebelas (11) Pasal Kode Etik Jurnalistik (KEJ)</h2>
+          <p class="text-xs text-slate-500 mt-0.5">Ditetapkan oleh Dewan Pers sebagai pedoman mutlak wartawan Indonesia</p>
         </div>
 
-        <div class="space-y-3.5">
+        <div class="space-y-3">
           <div
             v-for="item in kodeEtikPage.articles"
             :key="item.pasal"
             class="p-4 rounded-2xl bg-slate-50/70 border border-slate-200/90 hover:border-[#0B2563]/40 transition-colors"
           >
-            <div class="flex items-start gap-3">
-              <span class="w-7 h-7 rounded-lg bg-[#0B2563] text-[#F5B700] text-xs font-black flex items-center justify-center shrink-0 mt-0.5">
-                {{ item.pasal }}
-              </span>
-              <div>
-                <h3 class="text-xs sm:text-sm font-extrabold text-slate-900">Pasal {{ item.pasal }} — {{ item.title }}</h3>
-                <p class="text-xs text-slate-700 leading-relaxed mt-1">{{ item.desc }}</p>
-              </div>
+            <div class="space-y-1">
+              <h3 class="text-xs sm:text-sm font-extrabold text-[#0B2563]">
+                Pasal {{ item.pasal }} — {{ item.title }}
+              </h3>
+              <p class="text-xs text-slate-700 leading-relaxed">{{ item.desc }}</p>
             </div>
           </div>
         </div>
