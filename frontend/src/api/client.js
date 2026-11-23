@@ -7,6 +7,88 @@ export const SESSION_DURATION_MS = 20 * 60 * 1000 // 20 menit
 const STORE_KEY = 'mftn_live_store_v2'
 const OLD_STORE_KEY = 'mftn_live_store_v1'
 
+// Konversi otomatis file gambar apa pun (JPG, PNG, WebP, GIF, BMP) menjadi format SVG vector
+export async function convertImageFileToSvg(file) {
+  if (!file) return null
+
+  // Jika sudah SVG
+  if (file.type === 'image/svg+xml' || file.name?.toLowerCase().endsWith('.svg')) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => {
+        const text = String(reader.result)
+        const svgBlob = new Blob([text], { type: 'image/svg+xml' })
+        const svgFile = new File([svgBlob], file.name || 'image.svg', { type: 'image/svg+xml' })
+        const dataUrl = text.startsWith('data:') ? text : `data:image/svg+xml;charset=utf-8,${encodeURIComponent(text)}`
+        resolve({
+          file: svgFile,
+          blob: svgBlob,
+          svgContent: text,
+          dataUrl,
+        })
+      }
+      reader.onerror = () => reject(new Error('Gagal membaca file SVG'))
+      reader.readAsText(file)
+    })
+  }
+
+  // Jika gambar raster (JPG, PNG, WebP, dll.), konversi presisi ke SVG W3C
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const rawDataUrl = e.target.result
+      const img = new Image()
+      img.onload = () => {
+        const width = img.naturalWidth || img.width || 1200
+        const height = img.naturalHeight || img.height || 800
+
+        let finalWidth = width
+        let finalHeight = height
+        const maxDim = 1600
+        if (finalWidth > maxDim) {
+          finalHeight = Math.round((finalHeight * maxDim) / finalWidth)
+          finalWidth = maxDim
+        }
+
+        const canvas = document.createElement('canvas')
+        canvas.width = finalWidth
+        canvas.height = finalHeight
+        const ctx = canvas.getContext('2d')
+        ctx.drawImage(img, 0, 0, finalWidth, finalHeight)
+
+        let optimizedData = ''
+        try {
+          optimizedData = canvas.toDataURL('image/webp', 0.88)
+        } catch (err) {}
+        if (!optimizedData || !optimizedData.startsWith('data:image/webp')) {
+          optimizedData = canvas.toDataURL('image/jpeg', 0.88)
+        }
+
+        // SVG wrapper W3C standard
+        const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 ${finalWidth} ${finalHeight}" width="${finalWidth}" height="${finalHeight}">
+  <image width="${finalWidth}" height="${finalHeight}" xlink:href="${optimizedData}" href="${optimizedData}"/>
+</svg>`
+
+        const baseName = (file.name ? file.name.replace(/\.[^.]+$/, '') : 'image') + '.svg'
+        const svgBlob = new Blob([svgContent], { type: 'image/svg+xml' })
+        const svgFile = new File([svgBlob], baseName, { type: 'image/svg+xml' })
+        const svgDataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgContent)}`
+
+        resolve({
+          file: svgFile,
+          blob: svgBlob,
+          svgContent,
+          dataUrl: svgDataUrl,
+        })
+      }
+      img.onerror = () => reject(new Error('Gagal memproses gambar untuk konversi SVG'))
+      img.src = rawDataUrl
+    }
+    reader.onerror = () => reject(new Error('Gagal membaca file gambar'))
+    reader.readAsDataURL(file)
+  })
+}
+
 // Inisialisasi local store dengan fallback data awal
 function loadLocalStore() {
   try {
@@ -675,14 +757,29 @@ export const api = {
 
     // 9. Admin Upload: /admin/upload
     if (path === '/admin/upload') {
-      const file = body instanceof FormData ? body.get('file') : null
-      if (!file) throw new Error('File tidak ditemukan')
+      const rawFile = body instanceof FormData ? body.get('file') : null
+      if (!rawFile) throw new Error('File tidak ditemukan')
+
+      // Otomatis ubah gambar apa pun menjadi SVG
+      let svgResult = null
+      try {
+        svgResult = await convertImageFileToSvg(rawFile)
+      } catch (err) {
+        console.warn('Gagal konversi ke SVG, memakai file asli:', err)
+      }
+
+      const fileToUpload = svgResult?.file || rawFile
+      const fallbackUrl = svgResult?.dataUrl
 
       if (supabase) {
         try {
-          const fileExt = file.name ? file.name.split('.').pop() : 'jpg'
-          const fileName = `${Date.now()}_${Math.random().toString(36).slice(2)}.${fileExt}`
-          const { error: uploadError } = await supabase.storage.from('mftn-uploads').upload(fileName, file)
+          const fileName = `${Date.now()}_${Math.random().toString(36).slice(2)}.svg`
+          const { error: uploadError } = await supabase.storage
+            .from('mftn-uploads')
+            .upload(fileName, fileToUpload, {
+              contentType: 'image/svg+xml',
+              upsert: true,
+            })
           if (!uploadError) {
             const { data } = supabase.storage.from('mftn-uploads').getPublicUrl(fileName)
             if (data?.publicUrl) {
@@ -690,15 +787,19 @@ export const api = {
             }
           }
         } catch (e) {
-          console.warn('[Supabase] Storage upload fallback to base64:', e)
+          console.warn('[Supabase] Storage upload fallback to SVG data url:', e)
         }
+      }
+
+      if (fallbackUrl) {
+        return { url: fallbackUrl }
       }
 
       return new Promise((resolve, reject) => {
         const reader = new FileReader()
         reader.onload = () => resolve({ url: reader.result })
         reader.onerror = () => reject(new Error('Gagal membaca file gambar'))
-        reader.readAsDataURL(file)
+        reader.readAsDataURL(fileToUpload)
       })
     }
 

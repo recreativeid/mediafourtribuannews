@@ -3,7 +3,7 @@ import { ref, onMounted, watch } from 'vue'
 import { api, resolveImg, formatNumber, timeAgoID } from '../../api/client'
 import { showToast } from '../../composables/usePortal'
 import RichEditor from '../../components/RichEditor.vue'
-import { Plus, Search, Pencil, Trash2, X, Upload, Star, ExternalLink } from 'lucide-vue-next'
+import { Plus, Search, Pencil, Trash2, X, Upload, Star, ExternalLink, Maximize2, Minimize2, Save } from 'lucide-vue-next'
 
 const articles = ref([])
 const categories = ref([])
@@ -16,6 +16,7 @@ const modalOpen = ref(false)
 const saving = ref(false)
 const uploading = ref(false)
 const editingId = ref(null)
+const isFullscreen = ref(false)
 
 const form = ref({
   title: '',
@@ -50,12 +51,13 @@ async function loadData() {
 
 function openCreate() {
   editingId.value = null
+  isFullscreen.value = typeof window !== 'undefined' && window.innerWidth < 768
   form.value = {
     title: '',
     category_id: categories.value[0]?.id || 1,
     excerpt: '',
-    content: '<p class="lead"><strong>JAKARTA</strong> — Tulis paragraf pembuka berita di sini...</p>\n<p>Lanjutkan uraian berita secara lengkap, aktual, dan berimbang.</p>',
-    thumbnail: '/uploads/berita/nasional/pembangunan-ikn-nusantara.jpg',
+    content: '<p class="lead"><strong>JAKARTA</strong> — Tulis paragraf pembuka berita di sini...</p>\n<p>Lanjutkan uraian berita secara lengkap, aktual, dan berimbang tanpa batas huruf dan media.</p>',
+    thumbnail: '',
     caption: '',
     tags: 'Nasional, Media Four Tribuan News',
     status: 'published',
@@ -66,6 +68,7 @@ function openCreate() {
 
 function openEdit(art) {
   editingId.value = art.id
+  isFullscreen.value = typeof window !== 'undefined' && window.innerWidth < 768
   form.value = {
     title: art.title,
     category_id: art.category_id,
@@ -87,7 +90,7 @@ async function handleImageUpload(e) {
   try {
     const res = await api.upload(file)
     form.value.thumbnail = res.url
-    showToast('Gambar berhasil diunggah!')
+    showToast('Gambar berhasil diunggah & otomatis diubah ke format SVG!')
   } catch (err) {
     showToast(err.message || 'Gagal mengunggah gambar', 'error')
   } finally {
@@ -254,19 +257,64 @@ onMounted(loadData)
     </div>
 
     <!-- CREATE / EDIT MODAL -->
-    <div v-if="modalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-5">
+    <div
+      v-if="modalOpen"
+      class="fixed inset-0 z-50 flex items-center justify-center transition-all duration-200"
+      :class="isFullscreen ? 'p-0' : 'p-2 sm:p-5'"
+    >
       <div class="fixed inset-0 bg-slate-950/75 backdrop-blur-xs" @click="modalOpen = false"></div>
-      <div class="relative bg-white rounded-3xl w-full max-w-4xl max-h-[94vh] flex flex-col overflow-hidden shadow-2xl z-10">
-        <div class="px-6 py-4 bg-[#0B2563] text-white flex items-center justify-between">
-          <h3 class="text-sm sm:text-base font-black">
-            {{ editingId ? 'Sunting Berita' : 'Tulis Berita Baru' }}
-          </h3>
-          <button type="button" @click="modalOpen = false" class="p-1.5 rounded-lg hover:bg-white/10">
-            <X class="w-5 h-5" />
-          </button>
+      <div
+        class="relative bg-white flex flex-col overflow-hidden shadow-2xl z-10 transition-all duration-200"
+        :class="isFullscreen
+          ? 'w-full h-[100dvh] max-w-none max-h-none rounded-none'
+          : 'w-full max-w-5xl max-h-[94vh] rounded-2xl sm:rounded-3xl'"
+      >
+        <div class="px-4 sm:px-6 py-3.5 bg-[#0B2563] text-white flex items-center justify-between gap-2 shrink-0 flex-wrap">
+          <div class="flex items-center gap-2 min-w-0">
+            <h3 class="text-sm sm:text-base font-black truncate">
+              {{ editingId ? 'Sunting Berita' : 'Tulis Berita Baru' }}
+            </h3>
+            <span v-if="isFullscreen" class="hidden sm:inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-white/20 text-white">
+              Layar Penuh (100%)
+            </span>
+          </div>
+
+          <div class="flex items-center gap-2 shrink-0">
+            <!-- Tombol Lebarkan Layar (Layar Penuh HP & Desktop) -->
+            <button
+              type="button"
+              @click="isFullscreen = !isFullscreen"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-colors cursor-pointer"
+              :title="isFullscreen ? 'Kecilkan Layar' : 'Lebarkan Layar Penuh (Tampilan Penuh di HP)'"
+            >
+              <component :is="isFullscreen ? Minimize2 : Maximize2" class="w-4 h-4 text-[#F5B700]" />
+              <span class="text-[11px]">{{ isFullscreen ? 'Kecilkan' : 'Lebarkan Layar' }}</span>
+            </button>
+
+            <!-- Tombol Simpan Cepat di Header -->
+            <button
+              type="button"
+              @click="saveArticle"
+              :disabled="saving"
+              class="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-lg bg-[#D91E28] hover:bg-red-700 text-white text-xs font-black transition-colors cursor-pointer disabled:opacity-50 shadow-sm"
+            >
+              <Save class="w-3.5 h-3.5" />
+              <span>{{ saving ? 'Menyimpan...' : 'Simpan Berita' }}</span>
+            </button>
+
+            <!-- Tombol Tutup X -->
+            <button
+              type="button"
+              @click="modalOpen = false"
+              class="p-1.5 rounded-lg hover:bg-white/10 text-white transition-colors cursor-pointer"
+              title="Tutup"
+            >
+              <X class="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
-        <form @submit.prevent="saveArticle" class="p-5 sm:p-6 overflow-y-auto space-y-4">
+        <form @submit.prevent="saveArticle" class="p-4 sm:p-6 overflow-y-auto space-y-4 flex-1">
           <div>
             <label class="block text-xs font-extrabold text-slate-700 mb-1">Judul Berita *</label>
             <input

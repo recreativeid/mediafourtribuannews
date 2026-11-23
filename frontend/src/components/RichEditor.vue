@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch, onMounted, nextTick } from 'vue'
+import { ref, watch, onMounted, nextTick, computed } from 'vue'
 import {
   Link2,
   Unlink,
@@ -21,7 +21,11 @@ import {
   Check,
   Eye,
   SlidersHorizontal,
+  Maximize2,
+  Minimize2,
+  Sparkles,
 } from 'lucide-vue-next'
+import { convertImageFileToSvg } from '../api/client'
 
 const props = defineProps({
   modelValue: { type: String, default: '' },
@@ -34,6 +38,7 @@ const editorRef = ref(null)
 const mode = ref('visual') // 'visual' | 'code'
 const rawHtml = ref('')
 const showMoreTools = ref(true)
+const isEditorFullscreen = ref(false)
 
 // Modal state
 const mediaModalOpen = ref(false)
@@ -232,49 +237,105 @@ function openMediaModal() {
   mediaModalOpen.value = true
 }
 
-// Client-side image compressor (converts to optimized WebP/JPEG)
-async function compressImageFile(file, maxWidth = 1200, quality = 0.82) {
-  return new Promise((resolve) => {
-    if (file.type === 'image/svg+xml') {
+// Konversi gambar otomatis menjadi SVG murni / SVG vector container
+async function compressImageFile(file) {
+  try {
+    const res = await convertImageFileToSvg(file)
+    return res.dataUrl
+  } catch (err) {
+    console.warn('Fallback konversi SVG:', err)
+    return new Promise((resolve) => {
       const reader = new FileReader()
       reader.onload = () => resolve(reader.result)
       reader.readAsDataURL(file)
-      return
-    }
-
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const img = new Image()
-      img.onload = () => {
-        let width = img.width
-        let height = img.height
-
-        if (width > maxWidth) {
-          height = Math.round((height * maxWidth) / width)
-          width = maxWidth
-        }
-
-        const canvas = document.createElement('canvas')
-        canvas.width = width
-        canvas.height = height
-        const ctx = canvas.getContext('2d')
-        ctx.drawImage(img, 0, 0, width, height)
-
-        try {
-          const webpData = canvas.toDataURL('image/webp', quality)
-          if (webpData.startsWith('data:image/webp')) {
-            resolve(webpData)
-            return
-          }
-        } catch (err) {}
-
-        resolve(canvas.toDataURL('image/jpeg', quality))
-      }
-      img.src = e.target.result
-    }
-    reader.readAsDataURL(file)
-  })
+    })
+  }
 }
+
+// Bersihkan format background hitam / style gelap dari teks yang di-copy
+function cleanDarkModeStyles() {
+  if (!editorRef.value) return
+  const all = editorRef.value.querySelectorAll('*')
+  all.forEach((el) => {
+    if (el.style) {
+      el.style.backgroundColor = ''
+      el.style.background = ''
+      if (
+        el.style.color &&
+        (el.style.color.includes('255, 255, 255') ||
+          el.style.color.toLowerCase() === '#fff' ||
+          el.style.color.toLowerCase() === '#ffffff' ||
+          el.style.color === 'white')
+      ) {
+        el.style.color = '#0f172a'
+      }
+    }
+    if (el.getAttribute('class')) {
+      el.removeAttribute('class')
+    }
+  })
+  onEditorInput()
+}
+
+// Sanitasi otomatis saat paste agar tidak membawa kotak hitam dari HP dark mode
+async function onEditorPaste(e) {
+  // Cek apakah ada file gambar di clipboard
+  if (e.clipboardData?.items) {
+    for (const item of e.clipboardData.items) {
+      if (item.type.startsWith('image/')) {
+        e.preventDefault()
+        const file = item.getAsFile()
+        if (file) {
+          try {
+            const svgRes = await convertImageFileToSvg(file)
+            const html = `<figure style="text-align: center; margin: 1.5rem 0;">
+  <img src="${svgRes.dataUrl}" alt="Gambar Berita" style="border-radius: 0.75rem; max-width: 100%; height: auto; display: inline-block; box-shadow: 0 1px 3px rgba(0,0,0,0.1);" />
+</figure><p><br></p>`
+            insertHtmlAtCursor(html)
+            return
+          } catch (err) {
+            console.error('Paste image error:', err)
+          }
+        }
+      }
+    }
+  }
+
+  // Sanitasi teks HTML yang di-paste dari dark-mode app
+  const clipboardData = e.clipboardData || window.clipboardData
+  const html = clipboardData.getData('text/html')
+
+  if (html) {
+    e.preventDefault()
+    const parser = new DOMParser()
+    const doc = parser.parseFromString(html, 'text/html')
+    const all = doc.body.querySelectorAll('*')
+    all.forEach((el) => {
+      if (el.style) {
+        el.style.backgroundColor = ''
+        el.style.background = ''
+        if (
+          el.style.color &&
+          (el.style.color.includes('255, 255, 255') ||
+            el.style.color.toLowerCase() === '#fff' ||
+            el.style.color.toLowerCase() === '#ffffff' ||
+            el.style.color === 'white')
+        ) {
+          el.style.color = '#0f172a'
+        }
+      }
+      el.removeAttribute('class')
+    })
+    insertHtmlAtCursor(doc.body.innerHTML)
+  }
+}
+
+const stats = computed(() => {
+  const text = editorRef.value?.innerText || ''
+  const words = text.trim() ? text.trim().split(/\s+/).length : 0
+  const paragraphs = text.split(/\n+/).filter((p) => p.trim().length > 0).length
+  return { words, paragraphs }
+})
 
 async function onFileSelected(e) {
   const f = e.target.files?.[0]
@@ -359,27 +420,46 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="wp-editor-wrap border border-slate-300 rounded-xl bg-slate-50 overflow-hidden shadow-xs">
-    <!-- TOP BAR: [Add Media] button on left + [Visual] [Code] tabs on right -->
-    <div class="wp-editor-top flex items-end justify-between px-3 pt-2.5 pb-0 bg-[#f0f0f1] border-b border-slate-300">
-      <!-- Add Media Button (Matches Gambar 2) -->
-      <button
-        type="button"
-        @click="openMediaModal"
-        class="inline-flex items-center gap-1.5 px-3 py-1.5 mb-1.5 rounded bg-white hover:bg-[#f6f7f7] border border-[#2271b1] text-[#2271b1] hover:text-[#135e96] text-xs font-bold shadow-2xs transition-colors"
-      >
-        <span class="text-sm">📷♫</span>
-        <span>Add Media</span>
-      </button>
+  <div
+    class="wp-editor-wrap border border-slate-300 rounded-xl bg-slate-50 overflow-hidden shadow-xs transition-all duration-200"
+    :class="{ 'fixed inset-0 z-[100] rounded-none bg-white flex flex-col w-screen h-[100dvh] m-0 p-0': isEditorFullscreen }"
+  >
+    <!-- TOP BAR: [Add Media] button on left + Fullscreen Button + [Visual] [Code] tabs on right -->
+    <div class="wp-editor-top flex items-center justify-between px-3 py-2 bg-[#f0f0f1] border-b border-slate-300 shrink-0 flex-wrap gap-2">
+      <!-- Left Controls: Add Media & Lebarkan Editor -->
+      <div class="flex items-center gap-1.5 flex-wrap">
+        <button
+          type="button"
+          @click="openMediaModal"
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-white hover:bg-[#f6f7f7] border border-[#2271b1] text-[#2271b1] hover:text-[#135e96] text-xs font-bold shadow-2xs transition-colors cursor-pointer"
+        >
+          <span class="text-sm">📷♫</span>
+          <span>Add Media (SVG)</span>
+        </button>
 
-      <!-- Visual vs Code Tabs (Matches Gambar 2) -->
-      <div class="flex items-end space-x-1">
+        <button
+          type="button"
+          @click="isEditorFullscreen = !isEditorFullscreen"
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-white hover:bg-blue-50 border border-slate-300 hover:border-[#0B2563] text-slate-700 hover:text-[#0B2563] text-xs font-bold shadow-2xs transition-all cursor-pointer"
+          :title="isEditorFullscreen ? 'Kecilkan Editor' : 'Lebarkan Layar Penuh Editor (HP & Desktop)'"
+        >
+          <component :is="isEditorFullscreen ? Minimize2 : Maximize2" class="w-3.5 h-3.5 text-[#0B2563]" />
+          <span>{{ isEditorFullscreen ? 'Kecilkan Editor' : 'Lebarkan Editor' }}</span>
+        </button>
+
+        <span v-if="isEditorFullscreen" class="text-xs font-bold text-slate-600 bg-slate-200/80 px-2.5 py-1 rounded-full">
+          {{ stats.words }} kata &bull; {{ stats.paragraphs }} paragraf
+        </span>
+      </div>
+
+      <!-- Right Controls: Mode Tabs -->
+      <div class="flex items-center space-x-1">
         <button
           type="button"
           @click="switchMode('visual')"
-          class="px-3.5 py-1.5 text-xs font-semibold rounded-t border-t border-l border-r transition-colors"
+          class="px-3.5 py-1.5 text-xs font-semibold rounded border transition-colors cursor-pointer"
           :class="mode === 'visual'
-            ? 'bg-white text-slate-800 border-slate-300 -mb-px pb-2 font-bold shadow-2xs'
+            ? 'bg-white text-slate-800 border-slate-300 font-bold shadow-2xs'
             : 'bg-[#dcdcde] text-slate-600 border-transparent hover:bg-[#eaeaea]'"
         >
           Visual
@@ -387,12 +467,12 @@ onMounted(() => {
         <button
           type="button"
           @click="switchMode('code')"
-          class="px-3.5 py-1.5 text-xs font-semibold rounded-t border-t border-l border-r transition-colors"
+          class="px-3.5 py-1.5 text-xs font-semibold rounded border transition-colors cursor-pointer"
           :class="mode === 'code'
-            ? 'bg-white text-slate-800 border-slate-300 -mb-px pb-2 font-bold shadow-2xs'
+            ? 'bg-white text-slate-800 border-slate-300 font-bold shadow-2xs'
             : 'bg-[#dcdcde] text-slate-600 border-transparent hover:bg-[#eaeaea]'"
         >
-          Code
+          Code (HTML)
         </button>
       </div>
     </div>
@@ -576,10 +656,19 @@ onMounted(() => {
       <button
         type="button"
         @click="execCmd('removeFormat')"
-        class="px-2 py-0.5 rounded hover:bg-slate-200 text-xs text-slate-500"
-        title="Hapus Format"
+        class="px-2 py-0.5 rounded hover:bg-slate-200 text-xs text-slate-500 cursor-pointer"
+        title="Hapus Format Standar"
       >
         Clear Format
+      </button>
+      <button
+        type="button"
+        @click="cleanDarkModeStyles"
+        class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded hover:bg-amber-100 text-xs font-bold text-amber-800 border border-amber-300/80 bg-amber-50 cursor-pointer transition-colors"
+        title="Bersihkan Background Hitam / Kotak Gelap dari teks yang di-copy dari HP"
+      >
+        <Sparkles class="w-3.5 h-3.5 text-amber-600" />
+        <span>Bersihkan Warna Gelap</span>
       </button>
       <span class="text-[11px] text-slate-400 ml-auto hidden sm:inline">
         💡 Blok teks lalu klik 🔗 untuk membuat tautan
@@ -592,10 +681,12 @@ onMounted(() => {
       ref="editorRef"
       contenteditable="true"
       @input="onEditorInput"
+      @paste="onEditorPaste"
       @blur="saveSelection"
       @keyup="saveSelection"
       @mouseup="saveSelection"
-      class="p-4 sm:p-5 min-h-[300px] max-h-[520px] overflow-y-auto bg-white focus:outline-none article-prose text-sm sm:text-base leading-relaxed text-slate-900"
+      class="p-4 sm:p-6 bg-white focus:outline-none article-prose text-sm sm:text-base leading-relaxed text-slate-900"
+      :class="isEditorFullscreen ? 'flex-1 h-full min-h-0 overflow-y-auto max-h-none' : 'min-h-[350px] overflow-y-auto max-h-none'"
       :data-placeholder="placeholder"
     ></div>
 
@@ -605,7 +696,8 @@ onMounted(() => {
       :value="rawHtml"
       @input="onCodeInput"
       rows="14"
-      class="w-full p-4 font-mono text-xs text-slate-800 bg-[#f8f9fa] focus:outline-none min-h-[300px] border-none"
+      class="w-full p-4 font-mono text-xs text-slate-800 bg-[#f8f9fa] focus:outline-none border-none"
+      :class="isEditorFullscreen ? 'flex-1 h-full min-h-0 overflow-y-auto' : 'min-h-[350px]'"
       placeholder="Kode HTML isi berita..."
     ></textarea>
 
