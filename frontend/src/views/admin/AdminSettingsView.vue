@@ -8,14 +8,30 @@ import {
   testSupabaseConnection,
   syncAllToSupabase,
 } from '../../api/supabase'
-import { getLocalStore } from '../../api/client'
-import { Save, Database, CheckCircle2, AlertCircle, RefreshCw, ExternalLink, Search, Globe, FileCode, Radio } from 'lucide-vue-next'
+import { getLocalStore, saveLocalStore } from '../../api/client'
+import {
+  Save,
+  Database,
+  CheckCircle2,
+  AlertCircle,
+  RefreshCw,
+  ExternalLink,
+  Search,
+  Globe,
+  FileCode,
+  Radio,
+  LayoutTemplate,
+  RotateCcw,
+  Plus,
+  Trash2,
+} from 'lucide-vue-next'
 
 const saving = ref(false)
 const testingSb = ref(false)
 const syncingSb = ref(false)
 const sbStatus = ref(null)
 const pingingGoogle = ref(false)
+const clearingArticles = ref(false)
 
 const form = ref({
   site_title: '',
@@ -32,7 +48,40 @@ const form = ref({
   instagram_url: '',
   twitter_url: '',
   youtube_url: '',
+  footer_banner_subtitle: 'Media Online Nasional',
+  footer_banner_title: 'MEDIA FOUR TRIBUAN NEWS',
+  footer_banner_tagline: 'Aktual • Terpercaya • Independen • Tegas • Tajam • Profesional',
+  footer_copyright_prefix: 'Copyright Owned by',
+  footer_copyright: 'https://mediafourtribuannews.my.id/',
+  footer_copyright_url: 'https://mediafourtribuannews.my.id/',
+  footer_nav_links: '',
 })
+
+const defaultButtons = [
+  { label: 'Tentang Kami', url: '/tentang' },
+  { label: 'Redaksi', url: '/redaksi' },
+  { label: 'Kontak', url: '/tentang#kontak' },
+  { label: 'Pedoman Media Siber', url: '/pedoman-media-siber' },
+  { label: 'Kebijakan Privasi', url: '/privacy-policy' },
+  { label: 'Disclaimer', url: '/disclaimer' },
+  { label: 'Kode Etik', url: '/kode-etik' },
+  { label: 'Indeks', url: '/indeks' },
+]
+
+const footerButtonsList = ref([...defaultButtons])
+
+function addFooterButton() {
+  footerButtonsList.value.push({ label: 'Menu Baru', url: '/' })
+}
+
+function removeFooterButton(index) {
+  footerButtonsList.value.splice(index, 1)
+}
+
+function resetFooterButtonsDefault() {
+  footerButtonsList.value = JSON.parse(JSON.stringify(defaultButtons))
+  showToast('Tombol footer dikembalikan ke 8 menu standar redaksi!')
+}
 
 const sbForm = ref({
   url: '',
@@ -43,6 +92,21 @@ onMounted(async () => {
   const res = await api.get('/settings')
   if (res.data) {
     Object.assign(form.value, res.data)
+    if (res.data.footer_nav_links) {
+      try {
+        const parsed = JSON.parse(res.data.footer_nav_links)
+        if (Array.isArray(parsed) && parsed.length) {
+          footerButtonsList.value = parsed
+        }
+      } catch (e) {
+        if (typeof res.data.footer_nav_links === 'string' && res.data.footer_nav_links.includes('|')) {
+          footerButtonsList.value = res.data.footer_nav_links.split(',').map((item) => {
+            const parts = item.split('|').map((s) => s.trim())
+            return { label: parts[0] || 'Menu', url: parts[1] || '/' }
+          }).filter((x) => x.label)
+        }
+      }
+    }
   }
 
   const sbConf = getSupabaseConfig()
@@ -56,13 +120,36 @@ onMounted(async () => {
 async function save() {
   saving.value = true
   try {
+    form.value.footer_nav_links = JSON.stringify(footerButtonsList.value)
     await api.put('/admin/settings', form.value)
     await bootstrapPortal(true)
-    showToast('Pengaturan portal berhasil disimpan!')
+    showToast('Pengaturan portal & tombol footer berhasil disimpan!')
   } catch (e) {
     showToast(e.message, 'error')
   } finally {
     saving.value = false
+  }
+}
+
+async function handleClearAllArticles() {
+  if (!confirm('Apakah Anda yakin ingin MENGHAPUS SEMUA postingan berita agar pelanggan bisa mengunggah dari awal? Tindakan ini akan mengosongkan semua artikel berita.')) {
+    return
+  }
+  clearingArticles.value = true
+  try {
+    const store = getLocalStore()
+    store.articles = []
+    store.comments = []
+    if (store.next_ids) {
+      store.next_ids.articles = 1
+      store.next_ids.comments = 1
+    }
+    saveLocalStore(store)
+    showToast('Semua postingan berita telah berhasil dikosongkan!')
+  } catch (e) {
+    showToast('Gagal mengosongkan berita: ' + e.message, 'error')
+  } finally {
+    clearingArticles.value = false
   }
 }
 
@@ -183,6 +270,185 @@ async function pingGoogleSitemap() {
           </button>
         </div>
       </form>
+    </div>
+
+    <!-- Card: Pengaturan Teks & Tombol Footer -->
+    <div class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-7 shadow-2xs space-y-6">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-4">
+        <div>
+          <div class="flex items-center gap-2">
+            <LayoutTemplate class="w-5 h-5 text-[#D91E28]" />
+            <h2 class="text-lg font-black text-[#0B2563]">Pengaturan Teks & Tombol Footer</h2>
+          </div>
+          <p class="text-xs text-slate-500 mt-0.5">
+            Kustomisasi banner merah marun, tombol-tombol menu institusional, dan hak cipta di bagian bawah portal.
+          </p>
+        </div>
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-red-50 text-[#D91E28] border border-red-200 self-start sm:self-auto">
+          Dinamis & Realtime
+        </span>
+      </div>
+
+      <div class="space-y-5">
+        <!-- 1. Banner Strip Footer -->
+        <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+          <h3 class="text-xs font-black uppercase text-[#0B2563] tracking-wider">
+            1. Teks Banner Kotak Footer
+          </h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Subjudul Atas (Kecil)</label>
+              <input
+                v-model="form.footer_banner_subtitle"
+                placeholder="Media Online Nasional"
+                class="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-sm focus:border-[#0B2563] outline-hidden"
+              />
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Judul Utama Banner</label>
+              <input
+                v-model="form.footer_banner_title"
+                placeholder="MEDIA FOUR TRIBUAN NEWS"
+                class="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-sm font-bold focus:border-[#0B2563] outline-hidden"
+              />
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Tagline / Slogan Banner Kanan</label>
+            <input
+              v-model="form.footer_banner_tagline"
+              placeholder="Aktual • Terpercaya • Independen • Tegas • Tajam • Profesional"
+              class="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-sm focus:border-[#0B2563] outline-hidden"
+            />
+          </div>
+        </div>
+
+        <!-- 2. Tombol Navigasi Menu Footer -->
+        <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-xs font-black uppercase text-[#0B2563] tracking-wider">
+                2. Daftar Tombol Menu Footer
+              </h3>
+              <p class="text-[11px] text-slate-500">
+                Ubah label, URL tujuan, atau tambah tombol baru sesuai kebutuhan portal.
+              </p>
+            </div>
+            <button
+              type="button"
+              @click="resetFooterButtonsDefault"
+              class="text-[11px] font-bold text-slate-500 hover:text-[#0B2563] underline cursor-pointer inline-flex items-center gap-1"
+            >
+              <RotateCcw class="w-3 h-3" /> Reset Default
+            </button>
+          </div>
+
+          <!-- Items Editor -->
+          <div class="space-y-2">
+            <div
+              v-for="(btn, idx) in footerButtonsList"
+              :key="idx"
+              class="flex items-center gap-2 bg-white p-2.5 rounded-xl border border-slate-200 shadow-2xs"
+            >
+              <span class="text-xs font-extrabold text-slate-400 w-5 text-center">{{ idx + 1 }}.</span>
+              <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <input
+                  v-model="btn.label"
+                  placeholder="Label Tombol (cth: Tentang Kami)"
+                  class="w-full px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-xs font-bold focus:bg-white focus:border-[#0B2563] outline-hidden"
+                />
+                <input
+                  v-model="btn.url"
+                  placeholder="URL / Path (cth: /tentang)"
+                  class="w-full px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-xs font-mono focus:bg-white focus:border-[#0B2563] outline-hidden"
+                />
+              </div>
+              <button
+                type="button"
+                @click="removeFooterButton(idx)"
+                class="p-2 rounded-lg text-rose-500 hover:bg-rose-50 transition-colors cursor-pointer"
+                title="Hapus Tombol"
+              >
+                <Trash2 class="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            @click="addFooterButton"
+            class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-50 text-[#0B2563] hover:bg-blue-100 text-xs font-bold transition-colors cursor-pointer border border-blue-200"
+          >
+            <Plus class="w-3.5 h-3.5" /> Tambah Tombol Footer Baru
+          </button>
+        </div>
+
+        <!-- 3. Hak Cipta & Copyright -->
+        <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+          <h3 class="text-xs font-black uppercase text-[#0B2563] tracking-wider">
+            3. Hak Cipta & Copyright Footer
+          </h3>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Awalan Teks</label>
+              <input
+                v-model="form.footer_copyright_prefix"
+                placeholder="Copyright Owned by"
+                class="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-sm focus:border-[#0B2563] outline-hidden"
+              />
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Teks Domain / Label</label>
+              <input
+                v-model="form.footer_copyright"
+                placeholder="https://mediafourtribuannews.my.id/"
+                class="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-sm focus:border-[#0B2563] outline-hidden"
+              />
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Tautan URL</label>
+              <input
+                v-model="form.footer_copyright_url"
+                placeholder="https://mediafourtribuannews.my.id/"
+                class="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-sm focus:border-[#0B2563] outline-hidden"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div class="flex justify-end pt-2">
+          <button
+            type="button"
+            @click="save"
+            :disabled="saving"
+            class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#0B2563] hover:bg-[#D91E28] text-white text-xs font-extrabold transition-colors disabled:opacity-50 cursor-pointer shadow-sm"
+          >
+            <Save class="w-4 h-4" /> {{ saving ? 'Menyimpan...' : 'Simpan Pengaturan Footer' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card: Manajemen Konten & Kosongkan Postingan Berita -->
+    <div class="bg-white rounded-2xl border border-rose-200 p-5 sm:p-7 shadow-2xs space-y-4">
+      <div class="flex items-center gap-2">
+        <Trash2 class="w-5 h-5 text-rose-600" />
+        <h2 class="text-lg font-black text-slate-900">Kosongkan Semua Postingan Berita</h2>
+      </div>
+      <p class="text-xs text-slate-600 leading-relaxed">
+        Fitur ini menghapus seluruh postingan berita agar pelanggan dapat mulai mengunggah dan mengatur seluruh berita dari awal secara mandiri. Kategori, video, iklan, dan pengaturan lainnya tetap aman.
+      </p>
+      <div class="flex items-center gap-3 pt-1">
+        <button
+          type="button"
+          @click="handleClearAllArticles"
+          :disabled="clearingArticles"
+          class="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 text-xs font-extrabold transition-colors cursor-pointer"
+        >
+          <Trash2 class="w-3.5 h-3.5" />
+          {{ clearingArticles ? 'Mengosongkan...' : 'Hapus Semua Postingan Berita Sekarang' }}
+        </button>
+      </div>
     </div>
 
     <!-- Card 2: Database Supabase Cloud Integration -->

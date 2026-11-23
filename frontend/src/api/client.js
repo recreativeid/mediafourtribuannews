@@ -4,7 +4,8 @@ import { getSupabaseClient, getSupabaseConfig } from './supabase'
 
 export const SESSION_DURATION_MS = 20 * 60 * 1000 // 20 menit
 
-const STORE_KEY = 'mftn_live_store_v1'
+const STORE_KEY = 'mftn_live_store_v2'
+const OLD_STORE_KEY = 'mftn_live_store_v1'
 
 // Inisialisasi local store dengan fallback data awal
 function loadLocalStore() {
@@ -12,44 +13,54 @@ function loadLocalStore() {
     const raw = localStorage.getItem(STORE_KEY)
     if (raw) {
       const parsed = JSON.parse(raw)
-      if (parsed.articles && parsed.categories) {
+      if (parsed.categories) {
         if (!parsed.pages || !parsed.pages.length) {
           parsed.pages = JSON.parse(JSON.stringify(defaultPages))
         }
-        // Auto-enrich legacy comments with article metadata if missing
-        if (parsed.comments?.length && parsed.articles?.length) {
-          parsed.comments.forEach((cm) => {
-            if (!cm.article_title || !cm.article_slug) {
-              const art = parsed.articles.find(
-                (a) => String(a.id) === String(cm.article_id) || a.slug === cm.article_slug
-              )
-              if (art) {
-                cm.article_title = cm.article_title || art.title
-                cm.article_slug = cm.article_slug || art.slug
-                cm.article_category = cm.article_category || art.category_name
-                cm.article_thumbnail = cm.article_thumbnail || art.thumbnail
-              }
-            }
-          })
-        }
+        if (!parsed.articles) parsed.articles = []
         return parsed
+      }
+    } else {
+      // Migrasi dari v1 jika ada: pertahankan akun/pengaturan tetapi bersihkan artikel lama sesuai permintaan pengguna
+      const oldRaw = localStorage.getItem(OLD_STORE_KEY)
+      if (oldRaw) {
+        try {
+          const oldParsed = JSON.parse(oldRaw)
+          localStorage.removeItem(OLD_STORE_KEY)
+          const migrated = {
+            settings: { ...(seedData.settings || {}), ...(oldParsed.settings || {}) },
+            categories: [...(oldParsed.categories?.length ? oldParsed.categories : seedData.categories || [])],
+            articles: [], // Dikosongkan khusus postingan berita agar pelanggan upload dari awal
+            videos: [...(oldParsed.videos?.length ? oldParsed.videos : seedData.videos || [])],
+            comments: [],
+            editorial_team: [...(oldParsed.editorial_team?.length ? oldParsed.editorial_team : seedData.editorial_team || [])],
+            pages: oldParsed.pages?.length ? oldParsed.pages : JSON.parse(JSON.stringify(defaultPages)),
+            ads: [...(oldParsed.ads?.length ? oldParsed.ads : seedData.ads || [])],
+            users: [...(oldParsed.users?.length ? oldParsed.users : seedData.users || [])],
+            next_ids: { ...(oldParsed.next_ids || {}), articles: 1, comments: 1 },
+          }
+          saveLocalStore(migrated)
+          return migrated
+        } catch (e) {
+          localStorage.removeItem(OLD_STORE_KEY)
+        }
       }
     }
   } catch (e) {
     console.warn('Failed to parse local store:', e)
   }
-  // Default dari seedData
+  // Default dari seedData (artikel kosong)
   const initial = {
     settings: { ...(seedData.settings || {}) },
     categories: [...(seedData.categories || [])],
-    articles: [...(seedData.articles || [])],
+    articles: [],
     videos: [...(seedData.videos || [])],
-    comments: [...(seedData.comments || [])],
+    comments: [],
     editorial_team: [...(seedData.editorial_team || [])],
     pages: JSON.parse(JSON.stringify(defaultPages)),
     ads: [...(seedData.ads || [])],
     users: [...(seedData.users || [])],
-    next_ids: { ...(seedData.next_ids || {}) },
+    next_ids: { ...(seedData.next_ids || {}), articles: 1, comments: 1 },
   }
   saveLocalStore(initial)
   return initial

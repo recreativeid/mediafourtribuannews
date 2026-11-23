@@ -78,6 +78,35 @@ function openQuickTag(tag) {
   searchInput.value = tag
   router.push({ name: 'search', query: { q: tag } })
 }
+
+const defaultFooterButtons = [
+  { label: 'Tentang Kami', url: '/tentang' },
+  { label: 'Redaksi', url: '/redaksi' },
+  { label: 'Kontak', url: '/tentang#kontak' },
+  { label: 'Pedoman Media Siber', url: '/pedoman-media-siber' },
+  { label: 'Kebijakan Privasi', url: '/privacy-policy' },
+  { label: 'Disclaimer', url: '/disclaimer' },
+  { label: 'Kode Etik', url: '/kode-etik' },
+  { label: 'Indeks', url: '/indeks' },
+]
+
+const footerNavItems = computed(() => {
+  const raw = portalState.settings.footer_nav_links
+  if (!raw) return defaultFooterButtons
+  if (Array.isArray(raw)) return raw
+  try {
+    const parsed = JSON.parse(raw)
+    if (Array.isArray(parsed) && parsed.length) return parsed
+  } catch (e) {
+    if (typeof raw === 'string' && raw.includes('|')) {
+      return raw.split(',').map((item) => {
+        const parts = item.split('|').map((s) => s.trim())
+        return { label: parts[0] || 'Menu', url: parts[1] || '/' }
+      }).filter((x) => x.label)
+    }
+  }
+  return defaultFooterButtons
+})
 </script>
 
 <template>
@@ -325,16 +354,20 @@ function openQuickTag(tag) {
 
         <!-- ==================== STRIP FOOTER RESMI ==================== -->
         <div class="mt-8 pt-8 border-t border-blue-900/80 text-center space-y-4">
-          <!-- Banner Resmi Media Four Tribuan News -->
+          <!-- Banner Resmi Media Four Tribuan News Dinamis -->
           <div class="flex justify-center">
             <div class="inline-flex flex-col sm:flex-row items-center gap-3 bg-gradient-to-r from-red-800 via-red-700 to-amber-700 text-white px-6 py-3 rounded-2xl border border-amber-400/40 shadow-lg text-center max-w-2xl">
               <div class="text-center sm:text-left leading-tight">
-                <div class="text-[10px] font-extrabold text-[#F5B700] uppercase tracking-widest">Media Online Nasional</div>
-                <div class="text-sm sm:text-base font-black tracking-wider text-white">MEDIA FOUR TRIBUAN NEWS</div>
+                <div class="text-[10px] font-extrabold text-[#F5B700] uppercase tracking-widest">
+                  {{ portalState.settings.footer_banner_subtitle || 'Media Online Nasional' }}
+                </div>
+                <div class="text-sm sm:text-base font-black tracking-wider text-white">
+                  {{ portalState.settings.footer_banner_title || 'MEDIA FOUR TRIBUAN NEWS' }}
+                </div>
               </div>
               <div class="hidden sm:block h-6 w-px bg-white/20"></div>
               <div class="text-[11px] font-semibold text-amber-100 text-center sm:text-left">
-                Aktual &bull; Terpercaya &bull; Independen &bull; Tegas &bull; Tajam &bull; Profesional
+                {{ portalState.settings.footer_banner_tagline || 'Aktual • Terpercaya • Independen • Tegas • Tajam • Profesional' }}
               </div>
             </div>
           </div>
@@ -346,31 +379,39 @@ function openQuickTag(tag) {
             Email Redaksi: <span class="text-white font-bold">{{ portalState.settings.redaksi_email }}</span>
           </div>
 
-          <!-- Navigasi Menu: Tentang Kami | Redaksi | Kontak | Pedoman Media Siber | Kebijakan Privasi | Disclaimer | Kode Etik | Indeks -->
+          <!-- Navigasi Menu Footer Dinamis Dari Pengaturan Admin -->
           <nav class="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-xs font-bold text-slate-300 pt-1 tracking-wide" aria-label="Menu Institusional Redaksi">
-            <router-link to="/tentang" class="hover:text-[#F5B700] transition-colors">Tentang Kami</router-link>
-            <span class="text-slate-500 font-normal">|</span>
-            <router-link to="/redaksi" class="hover:text-[#F5B700] transition-colors">Redaksi</router-link>
-            <span class="text-slate-500 font-normal">|</span>
-            <router-link to="/tentang#kontak" class="hover:text-[#F5B700] transition-colors">Kontak</router-link>
-            <span class="text-slate-500 font-normal">|</span>
-            <router-link to="/pedoman-media-siber" class="hover:text-[#F5B700] transition-colors">Pedoman Media Siber</router-link>
-            <span class="text-slate-500 font-normal">|</span>
-            <router-link to="/privacy-policy" class="hover:text-[#F5B700] transition-colors">Kebijakan Privasi</router-link>
-            <span class="text-slate-500 font-normal">|</span>
-            <router-link to="/disclaimer" class="hover:text-[#F5B700] transition-colors">Disclaimer</router-link>
-            <span class="text-slate-500 font-normal">|</span>
-            <router-link to="/kode-etik" class="hover:text-[#F5B700] transition-colors">Kode Etik</router-link>
-            <span class="text-slate-500 font-normal">|</span>
-            <router-link to="/indeks" class="hover:text-[#F5B700] transition-colors">Indeks</router-link>
+            <template v-for="(btn, idx) in footerNavItems" :key="idx">
+              <span v-if="idx > 0" class="text-slate-500 font-normal">|</span>
+              <router-link
+                v-if="btn.url && btn.url.startsWith('/')"
+                :to="btn.url"
+                class="hover:text-[#F5B700] transition-colors"
+              >
+                {{ btn.label }}
+              </router-link>
+              <a
+                v-else-if="btn.url"
+                :href="btn.url"
+                target="_blank"
+                rel="noopener"
+                class="hover:text-[#F5B700] transition-colors"
+              >
+                {{ btn.label }}
+              </a>
+              <span v-else class="text-slate-300">{{ btn.label }}</span>
+            </template>
           </nav>
 
           <!-- Copyright & Kembali ke Atas (Teks Tertulis, Bukan Tombol Bulat) -->
           <div class="pt-4 flex flex-col sm:flex-row items-center justify-between gap-2 max-w-4xl mx-auto px-4 text-[11px] text-slate-400">
             <div>
-              Copyright Owned by
-              <a href="https://mediafourtribuannews.my.id/" class="text-slate-200 hover:text-white font-semibold">
-                https://mediafourtribuannews.my.id/
+              {{ portalState.settings.footer_copyright_prefix || 'Copyright Owned by' }}
+              <a
+                :href="portalState.settings.footer_copyright_url || 'https://mediafourtribuannews.my.id/'"
+                class="text-slate-200 hover:text-white font-semibold"
+              >
+                {{ portalState.settings.footer_copyright || 'https://mediafourtribuannews.my.id/' }}
               </a>
             </div>
 

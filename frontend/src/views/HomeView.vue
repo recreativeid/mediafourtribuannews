@@ -138,7 +138,10 @@ onUnmounted(() => {
             </router-link>
           </template>
         </div>
-        <div v-else class="text-xs text-slate-400 py-1">Memuat berita terkini Media Four Tribuan News...</div>
+        <div v-else class="text-xs text-slate-600 py-1 font-semibold flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span>Selamat Datang di Portal Berita Media Four Tribuan News — Aktual, Terpercaya & Independen.</span>
+        </div>
       </div>
     </div>
 
@@ -149,6 +152,35 @@ onUnmounted(() => {
     </div>
 
     <template v-else>
+      <!-- ==================== EMPTY STATE KONTEN BERITA ==================== -->
+      <section v-if="!latestArticles.length" class="bg-white rounded-3xl border border-slate-200 p-8 sm:p-12 text-center shadow-xs">
+        <div class="max-w-xl mx-auto space-y-4">
+          <div class="w-16 h-16 rounded-2xl bg-blue-50 text-[#0B2563] mx-auto flex items-center justify-center shadow-inner">
+            <BookOpen class="w-8 h-8 text-[#0B2563]" />
+          </div>
+          <h2 class="text-xl sm:text-2xl font-black text-[#0B2563]">
+            Selamat Datang di Portal Berita Media Four Tribuan News
+          </h2>
+          <p class="text-sm text-slate-600 leading-relaxed">
+            Website berita siap digunakan. Belum ada postingan berita yang dipublikasikan saat ini. Pelanggan atau redaksi dapat mulai mengunggah dan mempublikasikan berita baru melalui Panel Redaksi.
+          </p>
+          <div class="pt-2 flex flex-wrap items-center justify-center gap-3">
+            <router-link
+              to="/admin/berita"
+              class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#0B2563] hover:bg-[#D91E28] text-white text-xs font-extrabold transition-all shadow-md cursor-pointer"
+            >
+              <span>+ Mulai Tulis & Upload Berita</span>
+            </router-link>
+            <router-link
+              to="/tentang"
+              class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all"
+            >
+              <span>Tentang Redaksi</span>
+            </router-link>
+          </div>
+        </div>
+      </section>
+
       <!-- ==================== 2A. MOBILE-VERSE SWIPE HERO CAROUSEL ==================== -->
       <section v-if="currentHero" class="lg:hidden" @touchstart="onTouchStart" @touchend="onTouchEnd">
         <div class="relative rounded-2xl overflow-hidden bg-slate-950 h-[290px] sm:h-[360px] shadow-md">
@@ -313,7 +345,7 @@ onUnmounted(() => {
       </section>
 
       <!-- ==================== 3. BERITA TERBARU + INSTANT CATEGORY CHIPS ==================== -->
-      <section class="space-y-4">
+      <section v-if="latestArticles.length" class="space-y-4">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div class="flex items-center gap-2.5">
             <span class="w-1.5 h-6 rounded-full bg-gradient-to-b from-[#D91E28] to-[#0B2563]"></span>
@@ -365,7 +397,7 @@ onUnmounted(() => {
       </section>
 
       <!-- ==================== 4. MOBILE TERPOPULER RANKING ==================== -->
-      <section class="lg:hidden bg-white rounded-2xl border border-slate-200/80 p-4 shadow-xs space-y-3">
+      <section v-if="popularArticles.length" class="lg:hidden bg-white rounded-2xl border border-slate-200/80 p-4 shadow-xs space-y-3">
         <div class="flex items-center justify-between pb-2 border-b border-slate-100">
           <div class="flex items-center gap-2">
             <Flame class="w-4 h-4 text-[#D91E28]" />
